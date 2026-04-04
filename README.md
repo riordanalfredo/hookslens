@@ -41,9 +41,6 @@ src/
       useInsightSnapshot.ts
     lib/
       format.ts
-    api/
-      hooks/route.ts
-      stream/route.ts
   lib/
     hookslens/
       store.ts
@@ -81,10 +78,10 @@ Install in your Next.js app:
 npm i hookslens swr
 ```
 
-You get two integration layers:
+You get:
 
-- `hookslens` runtime hooks/instrumentation (import directly from package)
-- `/hookslens` panel files (copy template from package into your app)
+- `hookslens` runtime hooks/instrumentation
+- `hookslens/panel` dashboard component for a tiny App Router wrapper page
 
 ## 1) Use The Hook Utilities
 
@@ -93,20 +90,29 @@ In your SWR provider, wire middleware + fetch observer:
 ```tsx
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, ReactNode } from "react";
 import { SWRConfig } from "swr";
-import { hooksLensMiddleware, installFetchObserver } from "hookslens";
+import { installFetchObserver, hooksLensMiddleware } from "hookslens";
 
-const swrUse =
-  process.env.NODE_ENV === "development" ? [hooksLensMiddleware] : [];
+interface SWRProviderProps {
+  children: ReactNode;
+}
 
-export function Providers({ children }: { children: React.ReactNode }) {
+export const SWRProvider = ({ children }: SWRProviderProps) => {
   useEffect(() => {
-    installFetchObserver();
+    if (
+      typeof window !== "undefined" &&
+      process.env.NODE_ENV === "development"
+    ) {
+      installFetchObserver();
+    }
   }, []);
 
+  const swrUse =
+    process.env.NODE_ENV === "development" ? [hooksLensMiddleware] : [];
+
   return <SWRConfig value={{ use: swrUse }}>{children}</SWRConfig>;
-}
+};
 ```
 
 Optional custom hook registration:
@@ -121,27 +127,20 @@ useHooksLens({
 });
 ```
 
-## 2) Add the /hookslens Dashboard Page
+## 2) Add the /hookslens Dashboard Route Wrapper
 
-The npm package ships a copy template under `dist/local-lib`.
+Create a tiny route page in your app:
 
-Copy it into your app's `src/`:
+```tsx
+// src/app/hookslens/page.tsx
+"use client";
 
-```bash
-cp -R node_modules/hookslens/dist/local-lib/src/* ./src/
+import HooksLensPanel from "hookslens/panel";
+
+export default function Page() {
+  return <HooksLensPanel />;
+}
 ```
-
-That adds a self-contained `src/app/hookslens/` subtree:
-
-- `src/app/hookslens/page.jsx`
-- `src/app/hookslens/panel.css`
-- `src/app/hookslens/lib/*`
-- `src/app/hookslens/api/hooks/route.ts`
-- `src/app/hookslens/api/stream/route.ts`
-
-The panel UI and its local support files are intentionally kept together under
-`src/app/hookslens/` so the generated template can be copied or compressed as a
-single app-scoped unit.
 
 Then open:
 
@@ -149,7 +148,7 @@ Then open:
 http://localhost:3000/hookslens
 ```
 
-## Fastest Integration (Local Repo)
+## Optional: Local Copy Template
 
 Generate a copy-ready template from this repo:
 
@@ -159,7 +158,7 @@ npm install
 npm run build:local-lib
 ```
 
-This produces a single app-scoped subtree:
+This produces the copy template here:
 
 ```text
 dist/local-lib/
@@ -167,12 +166,9 @@ dist/local-lib/
     app/hookslens/
       page.jsx
       panel.css
-      lib/
-      api/
 ```
 
-Then copy the generated `src/app/hookslens/` subtree into your target Next.js
-app's `src/app/` directory.
+Use this only if you prefer copied files instead of the `hookslens/panel` wrapper approach.
 
 ## Required App Wiring
 
@@ -181,20 +177,41 @@ In your app SWR provider, add middleware and fetch observer in development:
 ```tsx
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, ReactNode } from "react";
 import { SWRConfig } from "swr";
-import { hooksLensMiddleware, installFetchObserver } from "hookslens";
+import { installFetchObserver, hooksLensMiddleware } from "hookslens";
 
-const swrUse =
-  process.env.NODE_ENV === "development" ? [hooksLensMiddleware] : [];
+interface SWRProviderProps {
+  children: ReactNode;
+}
 
-export function Providers({ children }: { children: React.ReactNode }) {
+export const SWRProvider = ({ children }: SWRProviderProps) => {
   useEffect(() => {
-    installFetchObserver();
+    if (
+      typeof window !== "undefined" &&
+      process.env.NODE_ENV === "development"
+    ) {
+      installFetchObserver();
+    }
   }, []);
 
-  return <SWRConfig value={{ use: swrUse }}>{children}</SWRConfig>;
-}
+  const swrUse =
+    process.env.NODE_ENV === "development" ? [hooksLensMiddleware] : [];
+
+  return (
+    <SWRConfig
+      value={{
+        dedupingInterval: 2000,
+        revalidateOnFocus: false,
+        revalidateOnReconnect: false,
+        keepPreviousData: true,
+        use: swrUse,
+      }}
+    >
+      {children}
+    </SWRConfig>
+  );
+};
 ```
 
 Then open:

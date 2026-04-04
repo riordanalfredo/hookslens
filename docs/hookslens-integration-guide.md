@@ -12,18 +12,17 @@ hookslens/
 ├── package.json
 └── src/
     ├── index.ts                      ← public exports
-  ├── lib/
-  │   └── hookslens/
-  │       ├── store.ts              ← central event store
-  │       ├── middleware.ts         ← SWR middleware (intercepts all useSWR)
-  │       ├── fetchObserver.ts      ← wraps window.fetch (catches useEffect fetches)
-  │       └── useHooksLens.ts       ← register custom hooks (optional per hook)
+    ├── lib/
+    │   └── hookslens/
+    │       ├── store.ts              ← central event store + BroadcastChannel sync
+    │       ├── middleware.ts         ← SWR middleware (intercepts all useSWR)
+    │       ├── fetchObserver.ts      ← wraps window.fetch (catches useEffect fetches)
+    │       └── useHooksLens.ts       ← register custom hooks (optional per hook)
     └── app/
         └── hookslens/
             ├── page.tsx              ← source panel UI in this repo
-            └── api/
-                ├── hooks/route.ts    ← JSON snapshot endpoint
-                └── stream/route.ts   ← SSE live-push endpoint
+            ├── hooks/useInsightSnapshot.ts  ← reads local store snapshots
+            └── lib/format.ts
 ```
 
 ---
@@ -40,34 +39,61 @@ Wire runtime instrumentation:
 
 ```tsx
 "use client";
-import { useEffect } from "react";
+import { useEffect, ReactNode } from "react";
 import { SWRConfig } from "swr";
-import { hooksLensMiddleware, installFetchObserver } from "hookslens";
+import { installFetchObserver, hooksLensMiddleware } from "hookslens";
 
-const swrUse =
-  process.env.NODE_ENV === "development" ? [hooksLensMiddleware] : [];
+interface SWRProviderProps {
+  children: ReactNode;
+}
 
-export function Providers({ children }: { children: React.ReactNode }) {
+export const SWRProvider = ({ children }: SWRProviderProps) => {
   useEffect(() => {
-    installFetchObserver();
+    if (
+      typeof window !== "undefined" &&
+      process.env.NODE_ENV === "development"
+    ) {
+      installFetchObserver();
+    }
   }, []);
 
-  return <SWRConfig value={{ use: swrUse }}>{children}</SWRConfig>;
+  const swrUse =
+    process.env.NODE_ENV === "development" ? [hooksLensMiddleware] : [];
+
+  return (
+    <SWRConfig
+      value={{
+        dedupingInterval: 2000,
+        revalidateOnFocus: false,
+        revalidateOnReconnect: false,
+        keepPreviousData: true,
+        use: swrUse,
+      }}
+    >
+      {children}
+    </SWRConfig>
+  );
+};
+```
+
+Add the panel route with a tiny wrapper page:
+
+```tsx
+// src/app/hookslens/page.tsx
+"use client";
+
+import HooksLensPanel from "hookslens/panel";
+
+export default function Page() {
+  return <HooksLensPanel />;
 }
 ```
 
-Add the panel route by copying template files shipped in the package:
-
-```bash
-cp -R node_modules/hookslens/dist/local-lib/src/app/hookslens ./src/app/
-```
-
-That creates/updates a single `src/app/hookslens/` subtree in your app,
-including `page.jsx`, `panel.css`, `api/*`, and `lib/*`.
+Then navigate to `http://localhost:3000/hookslens`.
 
 ---
 
-## Option B — Local repository copy template
+## Option B — Local repository copy template (fallback)
 
 Recommended (copy-ready bundle):
 
@@ -84,17 +110,10 @@ dist/local-lib/
   └── app/hookslens/
     ├── page.jsx
     ├── panel.css
-    ├── lib/
-    │   ├── store.ts
-    │   ├── middleware.ts
-    │   ├── fetchObserver.ts
-    │   └── useHooksLens.ts
-    └── api/
-      ├── hooks/route.ts
-      └── stream/route.ts
 ```
 
-Copy the generated `src/app/hookslens/` folder into your app's `src/app/`.
+Use this fallback only if you prefer copying files over importing
+`hookslens/panel`.
 
 ---
 
@@ -129,26 +148,41 @@ export function Providers({ children }: { children: React.ReactNode }) {
 
 ```tsx
 "use client";
-import { useEffect } from "react";
+import { useEffect, ReactNode } from "react";
 import { SWRConfig } from "swr";
-import { hooksLensMiddleware, installFetchObserver } from "hookslens";
+import { installFetchObserver, hooksLensMiddleware } from "hookslens";
 
-// Zero cost in production — both are no-ops when NODE_ENV !== 'development'
-const swrUse =
-  process.env.NODE_ENV === "development" ? [hooksLensMiddleware] : [];
+interface SWRProviderProps {
+  children: ReactNode;
+}
 
-export function Providers({ children }: { children: React.ReactNode }) {
+export const SWRProvider = ({ children }: SWRProviderProps) => {
   useEffect(() => {
-    // Wraps window.fetch to catch useEffect fetches and legacy SSR patterns
-    installFetchObserver();
+    if (
+      typeof window !== "undefined" &&
+      process.env.NODE_ENV === "development"
+    ) {
+      installFetchObserver();
+    }
   }, []);
 
+  const swrUse =
+    process.env.NODE_ENV === "development" ? [hooksLensMiddleware] : [];
+
   return (
-    <SWRConfig value={{ use: swrUse /* your existing config */ }}>
+    <SWRConfig
+      value={{
+        dedupingInterval: 2000,
+        revalidateOnFocus: false,
+        revalidateOnReconnect: false,
+        keepPreviousData: true,
+        use: swrUse,
+      }}
+    >
       {children}
     </SWRConfig>
   );
-}
+};
 ```
 
 That's it. Navigate to `http://localhost:3000/hookslens` and you'll see all
@@ -255,6 +289,7 @@ const toggleTheme = () => {
 | Duplicate fetch (SWR + useEffect, same URL)     | `checkDuplicateFetch` cross-references URL maps    |
 | Param mismatch (`assessmentId` vs `assessment`) | `detectParamMismatch` compares query key sets      |
 | Per-page hook scoping                           | `usePathname()` captured at middleware render time |
+| Multi-tab panel updates                         | `BroadcastChannel` + shared `hooksLensStore`       |
 
 ---
 
@@ -274,7 +309,6 @@ const toggleTheme = () => {
 
 - [ ] `hooksLensMiddleware` only added when `NODE_ENV === 'development'`
 - [ ] `installFetchObserver()` returns early when `NODE_ENV !== 'development'`
-- [ ] `/hookslens` API routes return 404 in production
 - [ ] `useHooksLens()` returns early when `NODE_ENV !== 'development'`
 - [ ] Panel page (`/hookslens/page.jsx`) should be excluded from production bundle
 

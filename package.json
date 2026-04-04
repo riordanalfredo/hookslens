@@ -11,7 +11,7 @@
     "dashboard",
     "react"
   ],
-  "author": "Riordan Alfredo",
+  "author": "Riordan Alfredo <hello@rioalfredo.com>",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -32,7 +32,12 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.mjs",
       "require": "./dist/index.js"
-    }
+    },
+    "./panel": {
+      "types": "./dist/local-lib/src/app/hookslens/page.d.ts",
+      "import": "./dist/local-lib/src/app/hookslens/page.jsx"
+    },
+    "./panel.css": "./dist/local-lib/src/app/hookslens/panel.css"
   },
   "files": [
     "dist",
