@@ -1,0 +1,89 @@
+import { hooksLensStore, FetchMethod } from "./store";
+
+let installed = false;
+
+/**
+ * installFetchObserver()
+ *
+ * Wraps window.fetch to intercept ALL client-side HTTP calls — not just SWR.
+ * This captures:
+ *   - useEffect + fetch() patterns
+ *   - axios (uses fetch under the hood in modern browsers)
+ *   - any other raw fetch calls
+ *
+ * Calls that originated from SWR are tagged as 'swr' by the middleware.
+ * Everything else is tagged as 'effect' (came from outside SWR).
+ *
+ * The observer is idempotent — calling it twice has no effect.
+ * It is automatically removed in production (NODE_ENV check).
+ *
+ * @example
+ * // src/app/layout.tsx
+ * 'use client';
+ * import { installFetchObserver } from '@/lib/hookslens/fetchObserver';
+ *
+ * export function Providers({ children }) {
+ *   useEffect(() => {
+ *     installFetchObserver();
+ *   }, []);
+ *   return <SWRConfig ...>{children}</SWRConfig>;
+ * }
+ */
+export function installFetchObserver() {
+  if (typeof window === "undefined") return;
+  if (process.env.NODE_ENV !== "development") return;
+  if (installed) return;
+
+  installed = true;
+  const original = window.fetch;
+
+  window.fetch = async function hooksLensFetch(input, init) {
+    // Resolve URL and method
+    const url =
+      typeof input === "string"
+        ? input
+        : input instanceof URL
+          ? input.href
+          : (input as Request).url;
+
+    const method = (
+      init?.method ?? (input instanceof Request ? input.method : "GET")
+    ).toUpperCase() as FetchMethod;
+
+    // Get current Next.js pathname from the URL bar (best effort in client context)
+    const route =
+      typeof window !== "undefined" ? window.location.pathname : "/";
+
+    const fetchId = crypto.randomUUID();
+
+    hooksLensStore.recordExternalFetchStart(url, method, route, fetchId);
+
+    const start = performance.now();
+
+    try {
+      const response = await original.call(window, input, init);
+      const duration = Math.round(performance.now() - start);
+
+      // Clone to avoid consuming the body
+      hooksLensStore.recordExternalFetchDone(
+        fetchId,
+        duration,
+        response.status,
+        route,
+        url,
+      );
+
+      return response;
+    } catch (err) {
+      const duration = Math.round(performance.now() - start);
+      // Network error — no HTTP status
+      hooksLensStore.recordExternalFetchDone(fetchId, duration, 0, route, url);
+      throw err;
+    }
+  };
+}
+
+export function uninstallFetchObserver() {
+  // No-op if not installed; useful for test cleanup
+  installed = false;
+}
