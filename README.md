@@ -28,7 +28,7 @@ Theme mode is persisted in `localStorage`.
 ## Current Architecture
 
 ```text
-packages/hookslens/src/
+src/
   app/__hookslens/
     page.tsx
     panel.css
@@ -52,12 +52,95 @@ packages/hookslens/src/
     useHooksLens.ts
 ```
 
-## Fastest Integration (Copy Template)
+## Demo
+
+A standalone mock demo is included in [hookslens-demo.jsx](hookslens-demo.jsx).
+
+Use it when you want to preview the panel UX quickly without wiring SWR middleware or Next.js routes yet.
+
+Notes:
+
+- It is static/mock data for UI exploration, not connected to your runtime fetch/store.
+- Current sample scenarios are healthcare compliance focused (mismatch, duplicate fetch, stalled polling).
+- You can open it in any React sandbox or local React app page/component to preview interactions.
+
+## Install From npm (Recommended)
+
+Install in your Next.js app:
+
+```bash
+npm i hookslens swr
+```
+
+You get two integration layers:
+
+- `hookslens` runtime hooks/instrumentation (import directly from package)
+- `/__hookslens` panel files (copy template from package into your app)
+
+## 1) Use The Hook Utilities
+
+In your SWR provider, wire middleware + fetch observer:
+
+```tsx
+"use client";
+
+import { useEffect } from "react";
+import { SWRConfig } from "swr";
+import { hooksLensMiddleware, installFetchObserver } from "hookslens";
+
+const swrUse =
+  process.env.NODE_ENV === "development" ? [hooksLensMiddleware] : [];
+
+export function Providers({ children }: { children: React.ReactNode }) {
+  useEffect(() => {
+    installFetchObserver();
+  }, []);
+
+  return <SWRConfig value={{ use: swrUse }}>{children}</SWRConfig>;
+}
+```
+
+Optional custom hook registration:
+
+```ts
+import { useHooksLens } from "hookslens";
+
+useHooksLens({
+  name: "useComplianceFindings",
+  description: "Fetches compliance findings by auditId",
+  fetchKey: `/api/compliance/findings?auditId=${auditId}`,
+});
+```
+
+## 2) Add The /\_\_hookslens Page
+
+The npm package ships a copy template under `dist/local-lib`.
+
+Copy it into your app's `src/`:
+
+```bash
+cp -R node_modules/hookslens/dist/local-lib/src/* ./src/
+```
+
+That adds:
+
+- `src/app/__hookslens/page.tsx`
+- `src/app/__hookslens/api/hooks/route.ts`
+- `src/app/__hookslens/api/stream/route.ts`
+- supporting panel UI files
+
+Then open:
+
+```text
+http://localhost:3000/__hookslens
+```
+
+## Fastest Integration (Local Repo)
 
 Generate a copy-ready template from this repo:
 
 ```bash
-cd packages/hookslens/src
+cd .
 npm install
 npm run build:copy-template
 ```
@@ -65,7 +148,7 @@ npm run build:copy-template
 This produces:
 
 ```text
-packages/hookslens/src/dist/local-copy-template/
+dist/local-lib/
   src/
     lib/hookslens/
     app/__hookslens/
@@ -82,8 +165,7 @@ In your app SWR provider, add middleware and fetch observer in development:
 
 import { useEffect } from "react";
 import { SWRConfig } from "swr";
-import { hooksLensMiddleware } from "@/lib/hookslens/middleware";
-import { installFetchObserver } from "@/lib/hookslens/fetchObserver";
+import { hooksLensMiddleware, installFetchObserver } from "hookslens";
 
 const swrUse =
   process.env.NODE_ENV === "development" ? [hooksLensMiddleware] : [];
@@ -106,7 +188,7 @@ http://localhost:3000/__hookslens
 ## Optional: Register Named Custom Hooks
 
 ```ts
-import { useHooksLens } from "@/lib/hookslens/useHooksLens";
+import { useHooksLens } from "hookslens";
 
 useHooksLens({
   name: "usePartnerFeedback",
@@ -131,14 +213,8 @@ From repo root:
 npm install
 npm run dev
 npm run build
-```
-
-From `packages/hookslens/src`:
-
-```bash
-npm run dev
-npm run build
 npm run build:copy-template
+npm run pack:check
 ```
 
 ## Contributing

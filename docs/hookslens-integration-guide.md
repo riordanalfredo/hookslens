@@ -9,40 +9,76 @@ Next.js App Router project. Zero changes to your business logic required.
 
 ```
 hookslens/
-├── packages/
-│   └── hookslens/
-│       ├── package.json
-│       └── src/
-│           ├── index.ts                      ← public exports
-│           ├── hooks/
-│           │   └── useHooksLens.ts           ← register custom hooks (optional per hook)
-│           ├── utils/
-│           │   ├── store.ts                  ← central event store
-│           │   ├── middleware.ts             ← SWR middleware (intercepts all useSWR)
-│           │   └── fetchObserver.ts          ← wraps window.fetch (catches useEffect fetches)
-│           └── app/
-│               └── __hookslens/
-│                   ├── page.tsx              ← the panel UI (served at /__hookslens)
-│                   └── api/
-│                       ├── hooks/route.ts    ← JSON snapshot endpoint
-│                       └── stream/route.ts   ← SSE live-push endpoint
+├── package.json
+└── src/
+    ├── index.ts                      ← public exports
+    ├── hooks/
+    │   └── useHooksLens.ts           ← register custom hooks (optional per hook)
+    ├── utils/
+    │   ├── store.ts                  ← central event store
+    │   ├── middleware.ts             ← SWR middleware (intercepts all useSWR)
+    │   └── fetchObserver.ts          ← wraps window.fetch (catches useEffect fetches)
+    └── app/
+        └── __hookslens/
+            ├── page.tsx              ← the panel UI (served at /__hookslens)
+            └── api/
+                ├── hooks/route.ts    ← JSON snapshot endpoint
+                └── stream/route.ts   ← SSE live-push endpoint
 ```
 
 ---
 
-## Files you copy into your project (local library approach)
+## Option A — Install from npm (recommended)
+
+Install in your app:
+
+```bash
+npm i hookslens swr
+```
+
+Wire runtime instrumentation:
+
+```tsx
+"use client";
+import { useEffect } from "react";
+import { SWRConfig } from "swr";
+import { hooksLensMiddleware, installFetchObserver } from "hookslens";
+
+const swrUse =
+  process.env.NODE_ENV === "development" ? [hooksLensMiddleware] : [];
+
+export function Providers({ children }: { children: React.ReactNode }) {
+  useEffect(() => {
+    installFetchObserver();
+  }, []);
+
+  return <SWRConfig value={{ use: swrUse }}>{children}</SWRConfig>;
+}
+```
+
+Add the panel route by copying template files shipped in the package:
+
+```bash
+cp -R node_modules/hookslens/dist/local-lib/src/* ./src/
+```
+
+That creates/updates `src/app/__hookslens/*` and `src/lib/hookslens/*` in your app.
+
+---
+
+## Option B — Local repository copy template
 
 Recommended (copy-ready bundle):
 
 ```bash
-cd packages/hookslens/src
+cd .
 npm run build:copy-template
 ```
 
 This generates:
 
 ```
-packages/hookslens/src/dist/local-lib/
+dist/local-lib/
 └── src/
   ├── lib/hookslens/
   │   ├── store.ts
@@ -98,8 +134,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
 "use client";
 import { useEffect } from "react";
 import { SWRConfig } from "swr";
-import { hooksLensMiddleware } from "@/lib/hookslens/middleware";
-import { installFetchObserver } from "@/lib/hookslens/fetchObserver";
+import { hooksLensMiddleware, installFetchObserver } from "hookslens";
 
 // Zero cost in production — both are no-ops when NODE_ENV !== 'development'
 const swrUse =
@@ -142,7 +177,7 @@ export function usePartnerFeedback(assessmentId: string, questionId: string) {
 
 ```ts
 // src/hooks/usePartnerFeedback.ts
-import { useHooksLens } from "@/lib/hookslens/useHooksLens";
+import { useHooksLens } from "hookslens";
 
 export function usePartnerFeedback(assessmentId: string, questionId: string) {
   // dev-only, no-op in production
@@ -161,7 +196,7 @@ export function usePartnerFeedback(assessmentId: string, questionId: string) {
 
 ```ts
 // src/hooks/useLoadCompleteSubmission.ts
-import { useHooksLens } from "@/lib/hookslens/useHooksLens";
+import { useHooksLens } from "hookslens";
 
 export function useLoadCompleteSubmission(submissionId: string) {
   useHooksLens({

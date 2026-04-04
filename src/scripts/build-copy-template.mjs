@@ -8,63 +8,63 @@ const outRoot = path.join(pkgRoot, "dist", "local-lib");
 
 const copyPairs = [
   {
-    from: "utils/store.ts",
+    from: "src/utils/store.ts",
     to: "src/lib/hookslens/store.ts",
   },
   {
-    from: "utils/middleware.ts",
+    from: "src/utils/middleware.ts",
     to: "src/lib/hookslens/middleware.ts",
   },
   {
-    from: "utils/fetchObserver.ts",
+    from: "src/utils/fetchObserver.ts",
     to: "src/lib/hookslens/fetchObserver.ts",
   },
   {
-    from: "hooks/useHooksLens.ts",
+    from: "src/hooks/useHooksLens.ts",
     to: "src/lib/hookslens/useHooksLens.ts",
   },
   {
-    from: "app/__hookslens/page.tsx",
+    from: "src/app/__hookslens/page.tsx",
     to: "src/app/__hookslens/page.tsx",
   },
   {
-    from: "app/__hookslens/panel.css",
+    from: "src/app/__hookslens/panel.css",
     to: "src/app/__hookslens/panel.css",
   },
   {
-    from: "app/__hookslens/types.ts",
+    from: "src/app/__hookslens/types.ts",
     to: "src/app/__hookslens/types.ts",
   },
   {
-    from: "app/__hookslens/lib/format.ts",
+    from: "src/app/__hookslens/lib/format.ts",
     to: "src/app/__hookslens/lib/format.ts",
   },
   {
-    from: "app/__hookslens/hooks/useInsightSnapshot.ts",
+    from: "src/app/__hookslens/hooks/useInsightSnapshot.ts",
     to: "src/app/__hookslens/hooks/useInsightSnapshot.ts",
   },
   {
-    from: "app/__hookslens/components/Topbar.tsx",
+    from: "src/app/__hookslens/components/Topbar.tsx",
     to: "src/app/__hookslens/components/Topbar.tsx",
   },
   {
-    from: "app/__hookslens/components/Sidebar.tsx",
+    from: "src/app/__hookslens/components/Sidebar.tsx",
     to: "src/app/__hookslens/components/Sidebar.tsx",
   },
   {
-    from: "app/__hookslens/components/HooksTable.tsx",
+    from: "src/app/__hookslens/components/HooksTable.tsx",
     to: "src/app/__hookslens/components/HooksTable.tsx",
   },
   {
-    from: "app/__hookslens/components/TimelinePanel.tsx",
+    from: "src/app/__hookslens/components/TimelinePanel.tsx",
     to: "src/app/__hookslens/components/TimelinePanel.tsx",
   },
   {
-    from: "app/__hookslens/api/hooks/route.ts",
+    from: "src/app/__hookslens/api/hooks/route.ts",
     to: "src/app/__hookslens/api/hooks/route.ts",
   },
   {
-    from: "app/__hookslens/api/stream/route.ts",
+    from: "src/app/__hookslens/api/stream/route.ts",
     to: "src/app/__hookslens/api/stream/route.ts",
   },
 ];
@@ -99,7 +99,7 @@ const rewrites = [
 
 const readme = `# hookslens local copy template
 
-Generated from packages/hookslens/src.
+Generated from repository root src/.
 
 How to use:
 1. Copy the generated src/ folder into your Next.js app root (merge with existing src/).
