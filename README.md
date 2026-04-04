@@ -60,7 +60,7 @@ flowchart LR
   D --> F[hooksLensStore]
   E --> F
   F --> G[Snapshot hook useInsightSnapshot]
-  G --> H[/hookslens panel views]
+  G --> H[hookslens panel views]
   F <--> I[BroadcastChannel sync]
 ```
 
