@@ -14,12 +14,12 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/riordanalfredo/react-swr-insight.git"
+    "url": "git+https://github.com/riordanalfredo/hookslens.git"
   },
   "bugs": {
-    "url": "https://github.com/riordanalfredo/react-swr-insight/issues"
+    "url": "https://github.com/riordanalfredo/hookslens/issues"
   },
-  "homepage": "https://github.com/riordanalfredo/react-swr-insight#readme",
+  "homepage": "https://github.com/riordanalfredo/hookslens#readme",
   "publishConfig": {
     "access": "public"
   },

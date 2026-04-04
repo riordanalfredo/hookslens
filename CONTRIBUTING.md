@@ -1,4 +1,4 @@
-# Contributing to swr-insight
+# Contributing to HooksLens
 
 Thanks for your interest in contributing. This is a small, focused tool — contributions that improve reliability, extend coverage to more SWR APIs, or improve the panel UX are especially welcome.
 
