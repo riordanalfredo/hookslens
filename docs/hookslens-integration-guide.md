@@ -72,7 +72,7 @@ Recommended (copy-ready bundle):
 
 ```bash
 cd .
-npm run build:copy-template
+npm run build:local-lib
 ```
 
 This generates:

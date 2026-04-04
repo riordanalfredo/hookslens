@@ -151,7 +151,7 @@ Generate a copy-ready template from this repo:
 ```bash
 cd .
 npm install
-npm run build:copy-template
+npm run build:local-lib
 ```
 
 This produces:
@@ -222,7 +222,7 @@ From repo root:
 npm install
 npm run dev
 npm run build
-npm run build:copy-template
+npm run build:local-lib
 npm test
 npm run test:watch
 npm run pack:check
