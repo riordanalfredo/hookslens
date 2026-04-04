@@ -14,6 +14,7 @@ export async function GET() {
           hooks: insightStore.getHooks(),
           timeline: insightStore.getTimeline(),
           waterfall: insightStore.getWaterfall(),
+          routeCoverage: insightStore.getRouteCoverage(),
           diagnostics: insightStore.getDiagnostics(),
           routes: insightStore.getRoutes(),
           meta: { timestamp: Date.now() },

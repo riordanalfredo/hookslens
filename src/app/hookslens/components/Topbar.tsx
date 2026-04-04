@@ -17,10 +17,11 @@ export function Topbar({
     <div className="topbar">
       <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
         <div className="logo">
-          <div className="logo-icon">H</div>
+          <div className="logo-icon">🔍</div>
           hookslens
+          <span className="logo-ver">v0.3</span>
         </div>
-        <span className="logo-path">/hookslens</span>
+        <span className="logo-path">/__hookslens</span>
       </div>
 
       <div className="topbar-right">

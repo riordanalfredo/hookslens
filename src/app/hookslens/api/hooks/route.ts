@@ -9,8 +9,9 @@ export async function GET() {
     {
       hooks: insightStore.getHooks(),
       timeline: insightStore.getTimeline(),
-      waterfall: insightStore.getWaterfall(), // v0.2
-      diagnostics: insightStore.getDiagnostics(), // v0.2
+      waterfall: insightStore.getWaterfall(),
+      routeCoverage: insightStore.getRouteCoverage(),
+      diagnostics: insightStore.getDiagnostics(),
       routes: insightStore.getRoutes(),
       meta: { timestamp: Date.now() },
     },
