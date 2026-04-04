@@ -20,7 +20,7 @@ hookslens/
     │   └── fetchObserver.ts          ← wraps window.fetch (catches useEffect fetches)
     └── app/
         └── hookslens/
-            ├── page.tsx              ← the panel UI (served at /hookslens)
+            ├── page.tsx              ← source panel UI in this repo
             └── api/
                 ├── hooks/route.ts    ← JSON snapshot endpoint
                 └── stream/route.ts   ← SSE live-push endpoint
@@ -62,7 +62,8 @@ Add the panel route by copying template files shipped in the package:
 cp -R node_modules/hookslens/dist/local-lib/src/* ./src/
 ```
 
-That creates/updates `src/app/hookslens/*` and `src/lib/hookslens/*` in your app.
+That creates/updates `src/app/hookslens/page.jsx`, `src/app/hookslens/panel.css`,
+`src/app/hookslens/api/*`, and `src/lib/hookslens/*` in your app.
 
 ---
 
@@ -86,12 +87,8 @@ dist/local-lib/
   │   ├── fetchObserver.ts
   │   └── useHooksLens.ts
   └── app/hookslens/
-    ├── page.tsx
+    ├── page.jsx
     ├── panel.css
-    ├── types.ts
-    ├── components/*
-    ├── hooks/*
-    ├── lib/*
     └── api/
       ├── hooks/route.ts
       └── stream/route.ts
@@ -224,7 +221,7 @@ export function useLoadCompleteSubmission(submissionId: string) {
 The theme toggle is built into the panel UI. Users click "🌙 Dark mode" / "☀️ Light
 mode" in the top-right corner. No code change needed in your app.
 
-If you want to persist the preference across panel sessions, add to `page.tsx`:
+If you want to persist the preference across panel sessions, add to `page.jsx`:
 
 ```tsx
 // In the panel page component — replace useState(false) with:
@@ -279,7 +276,7 @@ const toggleTheme = () => {
 - [ ] `installFetchObserver()` returns early when `NODE_ENV !== 'development'`
 - [ ] `/hookslens` API routes return 404 in production
 - [ ] `useHooksLens()` returns early when `NODE_ENV !== 'development'`
-- [ ] Panel page (`/hookslens/page.tsx`) should be excluded from production bundle
+- [ ] Panel page (`/hookslens/page.jsx`) should be excluded from production bundle
 
 To exclude the panel from production builds, add to `next.config.ts`:
 

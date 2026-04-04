@@ -121,7 +121,7 @@ useHooksLens({
 });
 ```
 
-## 2) Add The /\_\_hookslens Page
+## 2) Add the /hookslens Dashboard Page
 
 The npm package ships a copy template under `dist/local-lib`.
 
@@ -133,10 +133,13 @@ cp -R node_modules/hookslens/dist/local-lib/src/* ./src/
 
 That adds:
 
-- `src/app/hookslens/page.tsx`
+- `src/app/hookslens/page.jsx`
 - `src/app/hookslens/api/hooks/route.ts`
 - `src/app/hookslens/api/stream/route.ts`
-- supporting panel UI files
+- `src/app/hookslens/panel.css`
+
+The panel UI is intentionally generated as one self-contained `page.jsx`
+to reduce integration issues across app/router and TypeScript config differences.
 
 Then open:
 
@@ -227,6 +230,10 @@ npm test
 npm run test:watch
 npm run pack:check
 ```
+
+The local-lib panel page (`src/app/hookslens/page.jsx`) is auto-generated from
+the source panel (`src/app/hookslens/page.tsx`) directly inside
+`scripts/build-local-lib.mjs`, so there is no separate UI template file to maintain.
 
 ## Testing
 
