@@ -49,6 +49,21 @@ src/
       useHooksLens.ts
 ```
 
+Short runtime architecture:
+
+```mermaid
+flowchart LR
+  A[Next.js app route] --> B[SWR hooks]
+  A --> C[useEffect or raw fetch]
+  B --> D[hooksLensMiddleware]
+  C --> E[installFetchObserver wrapper]
+  D --> F[hooksLensStore]
+  E --> F
+  F --> G[Snapshot hook useInsightSnapshot]
+  G --> H[/hookslens panel views]
+  F <--> I[BroadcastChannel sync]
+```
+
 ## Demo
 
 A standalone mock demo is included in [hookslens-demo.jsx](./demo/hookslens-demo.jsx).
@@ -68,7 +83,7 @@ npm install
 npm run demo
 ```
 
-Then open the printed local URL (default: `http://127.0.0.1:5173/`).
+Then open the printed local URL (default: `http://127.0.0.1:5173/` or `http://localhost:5173/`).
 
 ## Install From npm (Recommended)
 
@@ -263,6 +278,7 @@ Test files live under `src/__tests__/` in this repo:
 - `src/__tests__/useHooksLens.test.ts`
 - `src/__tests__/fetchObserver.test.ts`
 - `src/__tests__/store.test.ts`
+- `src/__tests__/middleware.test.ts`
 
 Supported patterns in `package.json`:
 
@@ -276,6 +292,50 @@ npm test         # run once (CI/publish-safe)
 npm run test:watch
 npm run test:ui
 ```
+
+## Related Tools and Research
+
+This project is inspired by existing React and network debugging ecosystems, while focusing specifically on SWR plus hook-flow visibility in Next.js apps.
+
+Adjacent references:
+
+- React DevTools (components and hooks inspection): https://react.dev/learn/react-developer-tools
+- SWR official docs (cache, revalidation, middleware model): https://swr.vercel.app/docs/getting-started
+- SWR middleware docs (extension point used by Hookslens): https://swr.vercel.app/docs/middleware
+- React `useEffect` reference and troubleshooting notes: https://react.dev/reference/react/useEffect
+- Chrome DevTools Network panel (request-level debugging): https://developer.chrome.com/docs/devtools/network
+- OpenTelemetry JS (observability patterns for instrumentation): https://opentelemetry.io/docs/languages/js/
+
+What differs in Hookslens:
+
+- Browser/network tools show request outcomes, but not hook registration intent.
+- React DevTools shows component and hook snapshots, but not SWR-centric cross-hook fetch flow as a dedicated panel.
+- Hookslens is purpose-built for development diagnostics in Next.js + SWR projects, including hook key activity, timeline flags, and route-level debugging context.
+
+## What's Next
+
+The current roadmap is focused on closing the most important debugging gaps:
+
+- Revalidation cause tracing: annotate events with trigger sources (focus, reconnect, interval, mutate, mount, key change) so revalidation no longer looks random.
+- Effect trigger context: capture lightweight cause hints for external fetches (for example, route transition, visibility change, user action tags) to better explain useEffect chains.
+- Expected hook baseline checks: allow teams to define expected hook presence per route and flag missing hooks after refactors.
+- CI-safe regression summary: export diagnostics snapshots for PR checks so unexpected hook disappearance and duplicate patterns can be reviewed before merge.
+
+## Known Limitations
+
+- Development-only design: instrumentation is intended for local/staging diagnostics, not production telemetry.
+- Causality depth: current timeline shows sequence and overlap, but not full dependency-cause graphs for every effect.
+- Browser API dependency: cross-tab sync relies on BroadcastChannel and gracefully degrades when unavailable.
+- Client fetch focus: observer tracks browser fetch calls; server-side data access patterns are not fully represented in the panel.
+- Manual baseline today: missing hook detection is currently visual/observational unless you add project-specific assertions.
+
+## When Not to Use Hookslens
+
+- You need production-grade distributed tracing across backend services.
+- Your app is not Next.js and does not use SWR-driven client data flows.
+- You are profiling rendering performance only (React Profiler is a better first tool).
+- You need zero runtime instrumentation even in development environments.
+- Your debugging target is server actions, server components, or non-fetch transports only (for example GraphQL over custom clients without fetch).
 
 ## Contributing
 
