@@ -12,6 +12,7 @@ import {
   type TimelineEvent,
   type WaterfallEntry,
 } from "./types";
+import { createId } from "../id";
 
 export class HooksLensStore extends EventTarget {
   private hooks = new Map<string, HookEntry>();
@@ -593,7 +594,7 @@ export class HooksLensStore extends EventTarget {
     const exampleUrls = snapshots.map((snapshot) => snapshot.url).slice(0, 3);
 
     this.paramMismatches.set(endpoint, {
-      id: existing?.id ?? crypto.randomUUID(),
+      id: existing?.id ?? createId(),
       endpoint,
       seenParamSets: Array.from(uniqueSets).map((set) =>
         set.split(",").filter(Boolean),
@@ -680,7 +681,7 @@ export class HooksLensStore extends EventTarget {
     >,
   ) {
     this.waterfall.unshift({
-      id: crypto.randomUUID(),
+      id: createId(),
       completedAt: null,
       duration: null,
       status: "pending",
@@ -712,7 +713,7 @@ export class HooksLensStore extends EventTarget {
 
   private pushEvent(event: Omit<TimelineEvent, "id" | "timestamp">) {
     this.timeline.unshift({
-      id: crypto.randomUUID(),
+      id: createId(),
       timestamp: Date.now(),
       ...event,
     });

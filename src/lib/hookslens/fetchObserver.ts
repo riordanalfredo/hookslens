@@ -1,4 +1,5 @@
 import { hooksLensStore, FetchMethod } from "@/lib/hookslens/store";
+import { createId } from "./id";
 
 let installed = false;
 
@@ -76,7 +77,7 @@ export function installFetchObserver() {
     const route =
       typeof window !== "undefined" ? window.location.pathname : "/";
 
-    const fetchId = crypto.randomUUID();
+    const fetchId = createId();
 
     hooksLensStore.recordExternalFetchStart(url, method, route, fetchId);
     broadcastEvent("external:fetch:start", {
