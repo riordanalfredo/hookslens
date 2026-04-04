@@ -24,7 +24,7 @@ export function TimelinePanel({
           )}
         </div>
 
-        <div style={{ fontSize: 10, color: "var(--text3)" }}>
+        <div style={{ fontSize: 12, color: "var(--text3)" }}>
           {entries.length} events
           {routeFilter !== "all" ? ` | ${routeFilter}` : ""}
         </div>

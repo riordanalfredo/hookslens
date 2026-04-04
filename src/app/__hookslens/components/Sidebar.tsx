@@ -83,13 +83,13 @@ export function Sidebar({
         <div
           style={{
             padding: "0 14px",
-            fontSize: 11,
+            fontSize: 13,
             color: "var(--text3)",
             lineHeight: 1.7,
           }}
         >
           <div>{eventCount} events logged</div>
-          <div style={{ fontSize: 10 }}>Last update: {lastUpdate}</div>
+          <div style={{ fontSize: 12 }}>Last update: {lastUpdate}</div>
         </div>
       </div>
     </div>

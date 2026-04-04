@@ -54,7 +54,7 @@ src/
 
 ## Demo
 
-A standalone mock demo is included in [hookslens-demo.jsx](hookslens-demo.jsx).
+A standalone mock demo is included in [hookslens-demo.jsx](./demo/hookslens-demo.jsx).
 
 Use it when you want to preview the panel UX quickly without wiring SWR middleware or Next.js routes yet.
 
@@ -63,6 +63,15 @@ Notes:
 - It is static/mock data for UI exploration, not connected to your runtime fetch/store.
 - Current sample scenarios are healthcare compliance focused (mismatch, duplicate fetch, stalled polling).
 - You can open it in any React sandbox or local React app page/component to preview interactions.
+
+Run it locally from this repo:
+
+```bash
+npm install
+npm run demo
+```
+
+Then open the printed local URL (default: `http://127.0.0.1:5173/`).
 
 ## Install From npm (Recommended)
 
