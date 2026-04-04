@@ -44,12 +44,12 @@ src/
     api/
       hooks/route.ts
       stream/route.ts
-  utils/
-    store.ts
-    middleware.ts
-    fetchObserver.ts
-  hooks/
-    useHooksLens.ts
+  lib/
+    hookslens/
+      store.ts
+      middleware.ts
+      fetchObserver.ts
+      useHooksLens.ts
 ```
 
 ## Demo
@@ -131,15 +131,17 @@ Copy it into your app's `src/`:
 cp -R node_modules/hookslens/dist/local-lib/src/* ./src/
 ```
 
-That adds:
+That adds a self-contained `src/app/hookslens/` subtree:
 
 - `src/app/hookslens/page.jsx`
+- `src/app/hookslens/panel.css`
+- `src/app/hookslens/lib/*`
 - `src/app/hookslens/api/hooks/route.ts`
 - `src/app/hookslens/api/stream/route.ts`
-- `src/app/hookslens/panel.css`
 
-The panel UI is intentionally generated as one self-contained `page.jsx`
-to reduce integration issues across app/router and TypeScript config differences.
+The panel UI and its local support files are intentionally kept together under
+`src/app/hookslens/` so the generated template can be copied or compressed as a
+single app-scoped unit.
 
 Then open:
 
@@ -157,16 +159,20 @@ npm install
 npm run build:local-lib
 ```
 
-This produces:
+This produces a single app-scoped subtree:
 
 ```text
 dist/local-lib/
   src/
-    lib/hookslens/
     app/hookslens/
+      page.jsx
+      panel.css
+      lib/
+      api/
 ```
 
-Then copy the generated `src/` subtree into your target Next.js app `src/`.
+Then copy the generated `src/app/hookslens/` subtree into your target Next.js
+app's `src/app/` directory.
 
 ## Required App Wiring
 

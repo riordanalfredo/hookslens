@@ -14,7 +14,7 @@ vi.mock("next/navigation", () => ({
   usePathname: vi.fn(),
 }));
 
-vi.mock("../utils/store", () => ({
+vi.mock("@/lib/hookslens/store", () => ({
   hooksLensStore: {
     registerCustomHook: vi.fn(),
     unregisterCustomHook: vi.fn(),
@@ -37,8 +37,8 @@ describe("useHooksLens", () => {
     const nextNavigation = await import("next/navigation");
     vi.mocked(nextNavigation.usePathname).mockReturnValue("/dashboard");
 
-    const { useHooksLens } = await import("../hooks/useHooksLens");
-    const { hooksLensStore } = await import("../utils/store");
+    const { useHooksLens } = await import("../lib/hookslens/useHooksLens");
+    const { hooksLensStore } = await import("@/lib/hookslens/store");
 
     useHooksLens({
       name: "useComplianceFindings",
@@ -66,8 +66,8 @@ describe("useHooksLens", () => {
     const nextNavigation = await import("next/navigation");
     vi.mocked(nextNavigation.usePathname).mockReturnValue("/settings");
 
-    const { useHooksLens } = await import("../hooks/useHooksLens");
-    const { hooksLensStore } = await import("../utils/store");
+    const { useHooksLens } = await import("../lib/hookslens/useHooksLens");
+    const { hooksLensStore } = await import("@/lib/hookslens/store");
 
     useHooksLens({ name: "useAuditWorkspace" });
     cleanupEffect?.();
@@ -84,8 +84,8 @@ describe("useHooksLens", () => {
     const nextNavigation = await import("next/navigation");
     vi.mocked(nextNavigation.usePathname).mockReturnValue("/prod");
 
-    const { useHooksLens } = await import("../hooks/useHooksLens");
-    const { hooksLensStore } = await import("../utils/store");
+    const { useHooksLens } = await import("../lib/hookslens/useHooksLens");
+    const { hooksLensStore } = await import("@/lib/hookslens/store");
 
     useHooksLens({ name: "useComplianceSummary" });
 

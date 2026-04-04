@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 import { usePathname } from "next/navigation";
-import { hooksLensStore } from "../utils/store";
+import { hooksLensStore } from "@/lib/hookslens/store";
 
 export interface HooksLensOptions {
   /** The display name shown in the hookslens panel e.g. 'useComplianceFindings' */

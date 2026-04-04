@@ -1,5 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+vi.mock("@/lib/hookslens/store", () => ({
+  hooksLensStore: {
+    recordExternalFetchStart: vi.fn(),
+    recordExternalFetchDone: vi.fn(),
+  },
+}));
+
 describe("fetchObserver", () => {
   beforeEach(() => {
     vi.resetModules();
@@ -21,8 +28,9 @@ describe("fetchObserver", () => {
   });
 
   it("wraps fetch and records successful external fetch lifecycle", async () => {
-    const { installFetchObserver } = await import("../utils/fetchObserver");
-    const { hooksLensStore } = await import("../utils/store");
+    const { installFetchObserver } =
+      await import("../lib/hookslens/fetchObserver");
+    const { hooksLensStore } = await import("@/lib/hookslens/store");
 
     const startSpy = vi.spyOn(hooksLensStore, "recordExternalFetchStart");
     const doneSpy = vi.spyOn(hooksLensStore, "recordExternalFetchDone");
@@ -55,8 +63,9 @@ describe("fetchObserver", () => {
   });
 
   it("records failed external fetch with status 0", async () => {
-    const { installFetchObserver } = await import("../utils/fetchObserver");
-    const { hooksLensStore } = await import("../utils/store");
+    const { installFetchObserver } =
+      await import("../lib/hookslens/fetchObserver");
+    const { hooksLensStore } = await import("@/lib/hookslens/store");
 
     const doneSpy = vi.spyOn(hooksLensStore, "recordExternalFetchDone");
     (window.fetch as unknown as ReturnType<typeof vi.fn>).mockRejectedValueOnce(
@@ -81,7 +90,8 @@ describe("fetchObserver", () => {
   it("does not install outside development", async () => {
     vi.stubEnv("NODE_ENV", "production");
 
-    const { installFetchObserver } = await import("../utils/fetchObserver");
+    const { installFetchObserver } =
+      await import("../lib/hookslens/fetchObserver");
     const originalFetch = window.fetch;
 
     installFetchObserver();

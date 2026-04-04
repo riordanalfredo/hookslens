@@ -1,4 +1,4 @@
-import type { WaterfallEntry } from "../../../utils/store";
+import type { WaterfallEntry } from "@/lib/hookslens/store";
 
 interface WaterfallViewProps {
   entries: WaterfallEntry[];

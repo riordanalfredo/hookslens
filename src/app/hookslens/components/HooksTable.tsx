@@ -1,4 +1,5 @@
-import type { HookEntry } from "../../../utils/store";
+import type { HookEntry } from "@/lib/hookslens/store";
+
 import { durationClass, formatRelative } from "../lib/format";
 
 interface HooksTableProps {

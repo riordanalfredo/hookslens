@@ -1,5 +1,6 @@
+import type { RouteCoverage } from "@/lib/hookslens/store";
+
 import type { DiagnosticSnapshot } from "../types";
-import type { RouteCoverage } from "../../../utils/store";
 
 interface CoverageViewProps {
   routeCoverage: RouteCoverage[];

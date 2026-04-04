@@ -1,4 +1,4 @@
-import { insightStore } from "../../../../utils/store";
+import { hooksLensStore } from "@/lib/hookslens/store";
 
 export async function GET() {
   if (process.env.NODE_ENV !== "development") {
@@ -11,12 +11,12 @@ export async function GET() {
     start(controller) {
       function snapshot() {
         return JSON.stringify({
-          hooks: insightStore.getHooks(),
-          timeline: insightStore.getTimeline(),
-          waterfall: insightStore.getWaterfall(),
-          routeCoverage: insightStore.getRouteCoverage(),
-          diagnostics: insightStore.getDiagnostics(),
-          routes: insightStore.getRoutes(),
+          hooks: hooksLensStore.getHooks(),
+          timeline: hooksLensStore.getTimeline(),
+          waterfall: hooksLensStore.getWaterfall(),
+          routeCoverage: hooksLensStore.getRouteCoverage(),
+          diagnostics: hooksLensStore.getDiagnostics(),
+          routes: hooksLensStore.getRoutes(),
           meta: { timestamp: Date.now() },
         });
       }
@@ -36,8 +36,8 @@ export async function GET() {
         push("timeline:updated");
       }
 
-      insightStore.addEventListener("hooks:updated", onHooksUpdated);
-      insightStore.addEventListener("timeline:updated", onTimelineUpdated);
+      hooksLensStore.addEventListener("hooks:updated", onHooksUpdated);
+      hooksLensStore.addEventListener("timeline:updated", onTimelineUpdated);
 
       const pingInterval = setInterval(() => {
         try {
@@ -49,8 +49,11 @@ export async function GET() {
 
       return () => {
         clearInterval(pingInterval);
-        insightStore.removeEventListener("hooks:updated", onHooksUpdated);
-        insightStore.removeEventListener("timeline:updated", onTimelineUpdated);
+        hooksLensStore.removeEventListener("hooks:updated", onHooksUpdated);
+        hooksLensStore.removeEventListener(
+          "timeline:updated",
+          onTimelineUpdated,
+        );
       };
     },
   });

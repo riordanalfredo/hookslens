@@ -1,4 +1,4 @@
-import type { HookEntry } from "../../../utils/store";
+import type { HookEntry } from "@/lib/hookslens/store";
 
 interface PollingViewProps {
   hooks: HookEntry[];

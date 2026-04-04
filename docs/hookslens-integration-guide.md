@@ -12,12 +12,12 @@ hookslens/
 ├── package.json
 └── src/
     ├── index.ts                      ← public exports
-    ├── hooks/
-    │   └── useHooksLens.ts           ← register custom hooks (optional per hook)
-    ├── utils/
-    │   ├── store.ts                  ← central event store
-    │   ├── middleware.ts             ← SWR middleware (intercepts all useSWR)
-    │   └── fetchObserver.ts          ← wraps window.fetch (catches useEffect fetches)
+  ├── lib/
+  │   └── hookslens/
+  │       ├── store.ts              ← central event store
+  │       ├── middleware.ts         ← SWR middleware (intercepts all useSWR)
+  │       ├── fetchObserver.ts      ← wraps window.fetch (catches useEffect fetches)
+  │       └── useHooksLens.ts       ← register custom hooks (optional per hook)
     └── app/
         └── hookslens/
             ├── page.tsx              ← source panel UI in this repo
@@ -59,11 +59,11 @@ export function Providers({ children }: { children: React.ReactNode }) {
 Add the panel route by copying template files shipped in the package:
 
 ```bash
-cp -R node_modules/hookslens/dist/local-lib/src/* ./src/
+cp -R node_modules/hookslens/dist/local-lib/src/app/hookslens ./src/app/
 ```
 
-That creates/updates `src/app/hookslens/page.jsx`, `src/app/hookslens/panel.css`,
-`src/app/hookslens/api/*`, and `src/lib/hookslens/*` in your app.
+That creates/updates a single `src/app/hookslens/` subtree in your app,
+including `page.jsx`, `panel.css`, `api/*`, and `lib/*`.
 
 ---
 
@@ -81,20 +81,20 @@ This generates:
 ```
 dist/local-lib/
 └── src/
-  ├── lib/hookslens/
-  │   ├── store.ts
-  │   ├── middleware.ts
-  │   ├── fetchObserver.ts
-  │   └── useHooksLens.ts
   └── app/hookslens/
     ├── page.jsx
     ├── panel.css
+    ├── lib/
+    │   ├── store.ts
+    │   ├── middleware.ts
+    │   ├── fetchObserver.ts
+    │   └── useHooksLens.ts
     └── api/
       ├── hooks/route.ts
       └── stream/route.ts
 ```
 
-Copy the generated `src/` into your app `src/` (merge folders).
+Copy the generated `src/app/hookslens/` folder into your app's `src/app/`.
 
 ---
 

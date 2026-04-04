@@ -1,51 +1,63 @@
 import { useEffect, useRef, useState } from "react";
+
+import { hooksLensStore } from "@/lib/hookslens/store";
+
 import type { StoreSnapshot, ThemeMode } from "../types";
 
-const STREAM_ENDPOINT = "/hookslens/api/stream";
-const SNAPSHOT_ENDPOINT = "/hookslens/api/hooks";
 const THEME_KEY = "hookslens_theme";
+
+function getStoreSnapshot(): StoreSnapshot {
+  return {
+    hooks: hooksLensStore.getHooks(),
+    timeline: hooksLensStore.getTimeline(),
+    waterfall: hooksLensStore.getWaterfall(),
+    routeCoverage: hooksLensStore.getRouteCoverage(),
+    diagnostics: hooksLensStore.getDiagnostics(),
+    routes: hooksLensStore.getRoutes(),
+    meta: { timestamp: Date.now() },
+  };
+}
 
 export function useInsightSnapshot(paused: boolean) {
   const [snapshot, setSnapshot] = useState<StoreSnapshot | null>(null);
-  const [connected, setConnected] = useState(false);
+  const connected = true; // Always connected when reading directly from store
   const pausedRef = useRef(paused);
 
   pausedRef.current = paused;
 
   useEffect(() => {
-    const es = new EventSource(STREAM_ENDPOINT);
+    // Set initial snapshot
+    setSnapshot(getStoreSnapshot());
 
-    const onUpdate = (event: MessageEvent<string>) => {
-      if (pausedRef.current) return;
-      setSnapshot(JSON.parse(event.data) as StoreSnapshot);
-      setConnected(true);
+    // Listen to store events
+    const onHooksUpdated = () => {
+      if (!pausedRef.current) {
+        setSnapshot(getStoreSnapshot());
+      }
     };
 
-    es.addEventListener("snapshot", onUpdate as EventListener);
-    es.addEventListener("hooks:updated", onUpdate as EventListener);
-    es.addEventListener("timeline:updated", onUpdate as EventListener);
-    es.onerror = () => setConnected(false);
+    const onTimelineUpdated = () => {
+      if (!pausedRef.current) {
+        setSnapshot(getStoreSnapshot());
+      }
+    };
 
-    return () => es.close();
-  }, []);
+    hooksLensStore.addEventListener("hooks:updated", onHooksUpdated);
+    hooksLensStore.addEventListener("timeline:updated", onTimelineUpdated);
 
-  useEffect(() => {
-    if (connected) return;
-
-    const id = setInterval(async () => {
-      if (pausedRef.current) return;
-      try {
-        const res = await fetch(SNAPSHOT_ENDPOINT, { cache: "no-store" });
-        const data = (await res.json()) as StoreSnapshot;
-        setSnapshot(data);
-        setConnected(true);
-      } catch {
-        setConnected(false);
+    // Refresh every 2 seconds to catch any missed updates
+    const refreshInterval = setInterval(() => {
+      if (!pausedRef.current) {
+        setSnapshot(getStoreSnapshot());
       }
     }, 2000);
 
-    return () => clearInterval(id);
-  }, [connected]);
+    return () => {
+      hooksLensStore.removeEventListener("hooks:updated", onHooksUpdated);
+      hooksLensStore.removeEventListener("timeline:updated", onTimelineUpdated);
+      clearInterval(refreshInterval);
+    };
+  }, []);
 
   return { snapshot, connected, setSnapshot };
 }

@@ -885,5 +885,117 @@ class HooksLensStore extends EventTarget {
   }
 }
 
-export const hooksLensStore = new HooksLensStore();
+// Singleton pattern to preserve store across Next.js Fast Refresh
+const globalForStore = globalThis as unknown as {
+  hooksLensStore: HooksLensStore | undefined;
+};
+
+export const hooksLensStore =
+  globalForStore.hooksLensStore ?? new HooksLensStore();
+
+if (process.env.NODE_ENV !== "production") {
+  globalForStore.hooksLensStore = hooksLensStore;
+}
+
 export const insightStore = hooksLensStore;
+
+// Set up BroadcastChannel listener for cross-tab synchronization
+if (typeof window !== "undefined" && process.env.NODE_ENV === "development") {
+  try {
+    const channel = new BroadcastChannel("hookslens-events");
+    channel.onmessage = (event) => {
+      const { type, payload } = event.data;
+
+      switch (type) {
+        case "fetch:start":
+          if (payload.hookType) {
+            hooksLensStore.registerHook(
+              payload.key,
+              payload.hookType,
+              payload.refreshInterval,
+              payload.route,
+            );
+          }
+          hooksLensStore.recordFetchStart(
+            payload.key,
+            payload.route,
+            payload.url,
+          );
+          break;
+
+        case "fetch:success":
+          hooksLensStore.recordFetchSuccess(
+            payload.key,
+            payload.duration,
+            payload.route,
+            payload.httpStatus,
+          );
+          break;
+
+        case "fetch:error":
+          hooksLensStore.recordFetchError(
+            payload.key,
+            payload.duration,
+            payload.route,
+            payload.httpStatus,
+          );
+          break;
+
+        case "mutation:start":
+          if (payload.hookType) {
+            hooksLensStore.registerHook(
+              payload.key,
+              payload.hookType,
+              payload.refreshInterval,
+              payload.route,
+            );
+          }
+          hooksLensStore.recordMutationStart(
+            payload.key,
+            payload.route,
+            payload.url,
+          );
+          break;
+
+        case "mutation:success":
+          hooksLensStore.recordMutationSuccess(
+            payload.key,
+            payload.duration,
+            payload.route,
+            payload.httpStatus,
+          );
+          break;
+
+        case "mutation:error":
+          hooksLensStore.recordMutationError(
+            payload.key,
+            payload.duration,
+            payload.route,
+            payload.httpStatus,
+          );
+          break;
+
+        case "external:fetch:start":
+          hooksLensStore.recordExternalFetchStart(
+            payload.url,
+            payload.method,
+            payload.route,
+            payload.fetchId,
+          );
+          break;
+
+        case "external:fetch:done":
+          hooksLensStore.recordExternalFetchDone(
+            payload.fetchId,
+            payload.duration,
+            payload.httpStatus,
+            payload.route,
+            payload.url,
+          );
+          break;
+      }
+    };
+  } catch {
+    // BroadcastChannel not supported - local tracking only
+  }
+}

@@ -1,4 +1,5 @@
-import type { HookEntry } from "../../../utils/store";
+import type { HookEntry } from "hookslens";
+
 import { durationClass, formatRelative } from "../lib/format";
 
 interface AllHooksViewProps {

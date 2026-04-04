@@ -1,20 +1,21 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState, type ChangeEvent } from "react";
+
 import { AlertStrips } from "./components/AlertStrips";
 import { AllHooksView } from "./components/AllHooksView";
 import { CoverageView } from "./components/CoverageView";
 import { CurrentPageView } from "./components/CurrentPageView";
 import { ParamInspectorView } from "./components/ParamInspectorView";
-import { Sidebar } from "./components/Sidebar";
 import { PollingView } from "./components/PollingView";
+import { Sidebar } from "./components/Sidebar";
 import { TimelinePanel } from "./components/TimelinePanel";
 import { Topbar } from "./components/Topbar";
-import { formatTime, getPanelStats } from "./lib/format";
-import { useInsightSnapshot, useThemeMode } from "./hooks/useInsightSnapshot";
 import { WaterfallView } from "./components/WaterfallView";
+import { useInsightSnapshot, useThemeMode } from "./hooks/useInsightSnapshot";
+import { formatTime, getPanelStats } from "./lib/format";
 import type { StoreSnapshot, ViewMode } from "./types";
-import "./panel.css";
+import "@/app/hookslens/panel.css";
 
 export default function HooksLensPane() {
   const [paused, setPaused] = useState(false);
@@ -37,37 +38,14 @@ export default function HooksLensPane() {
     );
   };
 
-  useEffect(() => {
-    if (!snapshot?.routes.length) return;
-
-    if (!didInitRouteRef.current && routeFilter === "all") {
-      setRouteFilter(snapshot.routes[0]);
-      didInitRouteRef.current = true;
-    }
-
-    if (!snapshot.routes.includes(routeFilter) && routeFilter !== "all") {
-      setRouteFilter(snapshot.routes[0]);
-      didInitRouteRef.current = true;
-    }
-  }, [snapshot?.routes, routeFilter]);
-
-  if (!snapshot) {
-    return (
-      <div
-        className={`hookslens-root ${theme === "dark" ? "theme-dark" : "theme-light"}`}
-      >
-        <div className="connecting">
-          <div className="dot pulse" style={{ background: "var(--text3)" }} />
-          Connecting to app...
-        </div>
-      </div>
-    );
-  }
-
-  const { hooks, timeline, routes } = snapshot;
+  // Provide defaults when snapshot is null to keep hooks stable
+  const hooks = snapshot?.hooks ?? [];
+  const timeline = snapshot?.timeline ?? [];
+  const routes = snapshot?.routes ?? [];
   const currentRoute = routeFilter;
   const searchTerm = search.toLowerCase();
 
+  // All hooks (useMemo, useEffect) must be called before any conditional returns
   const currentRouteHooks = useMemo(
     () =>
       currentRoute === "all"
@@ -109,6 +87,33 @@ export default function HooksLensPane() {
         : timeline.filter((event) => event.route === routeFilter),
     [timeline, routeFilter],
   );
+
+  useEffect(() => {
+    if (!snapshot?.routes.length) return;
+
+    if (!didInitRouteRef.current && routeFilter === "all") {
+      setRouteFilter(snapshot.routes[0]);
+      didInitRouteRef.current = true;
+    }
+
+    if (!snapshot.routes.includes(routeFilter) && routeFilter !== "all") {
+      setRouteFilter(snapshot.routes[0]);
+      didInitRouteRef.current = true;
+    }
+  }, [snapshot?.routes, routeFilter]);
+
+  if (!snapshot) {
+    return (
+      <div
+        className={`hookslens-root ${theme === "dark" ? "theme-dark" : "theme-light"}`}
+      >
+        <div className="connecting">
+          <div className="dot pulse" style={{ background: "var(--text3)" }} />
+          Connecting to app...
+        </div>
+      </div>
+    );
+  }
 
   const viewTitle: Record<ViewMode, string> = {
     current: currentRoute === "all" ? "Current Page" : currentRoute,

@@ -1,4 +1,5 @@
-import type { HookEntry, RouteCoverage } from "../../../utils/store";
+import type { HookEntry, RouteCoverage } from "@/lib/hookslens/store";
+
 import type { PanelStats, ViewMode } from "../types";
 
 interface SidebarProps {

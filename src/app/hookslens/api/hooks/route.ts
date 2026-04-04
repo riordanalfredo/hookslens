@@ -1,4 +1,4 @@
-import { insightStore } from "../../../../utils/store";
+import { hooksLensStore } from "@/lib/hookslens/store";
 
 export async function GET() {
   if (process.env.NODE_ENV !== "development") {
@@ -7,12 +7,12 @@ export async function GET() {
 
   return Response.json(
     {
-      hooks: insightStore.getHooks(),
-      timeline: insightStore.getTimeline(),
-      waterfall: insightStore.getWaterfall(),
-      routeCoverage: insightStore.getRouteCoverage(),
-      diagnostics: insightStore.getDiagnostics(),
-      routes: insightStore.getRoutes(),
+      hooks: hooksLensStore.getHooks(),
+      timeline: hooksLensStore.getTimeline(),
+      waterfall: hooksLensStore.getWaterfall(),
+      routeCoverage: hooksLensStore.getRouteCoverage(),
+      diagnostics: hooksLensStore.getDiagnostics(),
+      routes: hooksLensStore.getRoutes(),
       meta: { timestamp: Date.now() },
     },
     {

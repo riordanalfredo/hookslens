@@ -1,4 +1,5 @@
-import type { TimelineEvent } from "../../../utils/store";
+import type { TimelineEvent } from "@/lib/hookslens/store";
+
 import { formatTime } from "../lib/format";
 
 interface TimelinePanelProps {

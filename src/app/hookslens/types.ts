@@ -4,7 +4,7 @@ import type {
   RouteCoverage,
   TimelineEvent,
   WaterfallEntry,
-} from "../../utils/store";
+} from "hookslens";
 
 export type ThemeMode = "dark" | "light";
 export type ViewMode =

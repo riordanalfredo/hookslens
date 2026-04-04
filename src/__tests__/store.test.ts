@@ -3,7 +3,7 @@ import {
   SLOW_FETCH_THRESHOLD_MS,
   STALL_THRESHOLD_MS,
   hooksLensStore,
-} from "../utils/store";
+} from "../lib/hookslens/store";
 
 describe("hooksLensStore", () => {
   it("registers/unregisters hook instances and routes", () => {

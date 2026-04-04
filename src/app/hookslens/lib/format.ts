@@ -1,4 +1,5 @@
-import type { HookEntry, TimelineEvent } from "../../../utils/store";
+import type { HookEntry, TimelineEvent } from "@/lib/hookslens/store";
+
 import type { PanelStats } from "../types";
 
 export function formatTime(ts: number) {

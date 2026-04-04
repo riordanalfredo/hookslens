@@ -1,7 +1,31 @@
 import { useEffect } from "react";
 import { usePathname } from "next/navigation";
 import type { Middleware, SWRHook } from "swr";
-import { hooksLensStore, FetchMethod } from "./store";
+import { hooksLensStore, FetchMethod } from "@/lib/hookslens/store";
+
+// Lazy initialization of BroadcastChannel for cross-tab communication
+let broadcastChannel: BroadcastChannel | null = null;
+let channelInitAttempted = false;
+
+// Send events via BroadcastChannel for cross-tab visibility
+function broadcastEvent(type: string, payload: any) {
+  if (!channelInitAttempted && typeof window !== "undefined") {
+    channelInitAttempted = true;
+    try {
+      broadcastChannel = new BroadcastChannel("hookslens-events");
+    } catch {
+      // BroadcastChannel not supported, will fall back to local-only tracking
+    }
+  }
+
+  if (broadcastChannel) {
+    try {
+      broadcastChannel.postMessage({ type, payload });
+    } catch {
+      // Silently ignore errors - local store still works
+    }
+  }
+}
 
 /**
  * hooksLensMiddleware — SWR middleware for hookslens.
@@ -66,8 +90,22 @@ export const hooksLensMiddleware: Middleware = (useSWRNext: SWRHook) => {
 
           if (isMutation) {
             hooksLensStore.recordMutationStart(serializedKey, pathname, url);
+            broadcastEvent("mutation:start", {
+              key: serializedKey,
+              route: pathname,
+              url,
+              hookType: type,
+              refreshInterval,
+            });
           } else {
             hooksLensStore.recordFetchStart(serializedKey, pathname, url);
+            broadcastEvent("fetch:start", {
+              key: serializedKey,
+              route: pathname,
+              url,
+              hookType: type,
+              refreshInterval,
+            });
           }
 
           try {
@@ -85,6 +123,12 @@ export const hooksLensMiddleware: Middleware = (useSWRNext: SWRHook) => {
                 pathname,
                 httpStatus,
               );
+              broadcastEvent("mutation:success", {
+                key: serializedKey,
+                duration,
+                route: pathname,
+                httpStatus,
+              });
             } else {
               hooksLensStore.recordFetchSuccess(
                 serializedKey,
@@ -92,6 +136,12 @@ export const hooksLensMiddleware: Middleware = (useSWRNext: SWRHook) => {
                 pathname,
                 httpStatus,
               );
+              broadcastEvent("fetch:success", {
+                key: serializedKey,
+                duration,
+                route: pathname,
+                httpStatus,
+              });
             }
 
             return result;
@@ -115,6 +165,12 @@ export const hooksLensMiddleware: Middleware = (useSWRNext: SWRHook) => {
                 pathname,
                 httpStatus,
               );
+              broadcastEvent("mutation:error", {
+                key: serializedKey,
+                duration,
+                route: pathname,
+                httpStatus,
+              });
             } else {
               hooksLensStore.recordFetchError(
                 serializedKey,
@@ -122,6 +178,12 @@ export const hooksLensMiddleware: Middleware = (useSWRNext: SWRHook) => {
                 pathname,
                 httpStatus,
               );
+              broadcastEvent("fetch:error", {
+                key: serializedKey,
+                duration,
+                route: pathname,
+                httpStatus,
+              });
             }
 
             throw err;

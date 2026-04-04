@@ -1,6 +1,28 @@
-import { hooksLensStore, FetchMethod } from "./store";
+import { hooksLensStore, FetchMethod } from "@/lib/hookslens/store";
 
 let installed = false;
+
+let broadcastChannel: BroadcastChannel | null = null;
+let channelInitAttempted = false;
+
+function broadcastEvent(type: string, payload: any) {
+  if (!channelInitAttempted && typeof window !== "undefined") {
+    channelInitAttempted = true;
+    try {
+      broadcastChannel = new BroadcastChannel("hookslens-events");
+    } catch {
+      // BroadcastChannel not supported, will fall back to local-only tracking
+    }
+  }
+
+  if (broadcastChannel) {
+    try {
+      broadcastChannel.postMessage({ type, payload });
+    } catch {
+      // Silently ignore errors - local store still works
+    }
+  }
+}
 
 /**
  * installFetchObserver()
@@ -57,6 +79,12 @@ export function installFetchObserver() {
     const fetchId = crypto.randomUUID();
 
     hooksLensStore.recordExternalFetchStart(url, method, route, fetchId);
+    broadcastEvent("external:fetch:start", {
+      url,
+      method,
+      route,
+      fetchId,
+    });
 
     const start = performance.now();
 
@@ -72,12 +100,26 @@ export function installFetchObserver() {
         route,
         url,
       );
+      broadcastEvent("external:fetch:done", {
+        fetchId,
+        duration,
+        httpStatus: response.status,
+        route,
+        url,
+      });
 
       return response;
     } catch (err) {
       const duration = Math.round(performance.now() - start);
       // Network error — no HTTP status
       hooksLensStore.recordExternalFetchDone(fetchId, duration, 0, route, url);
+      broadcastEvent("external:fetch:done", {
+        fetchId,
+        duration,
+        httpStatus: 0,
+        route,
+        url,
+      });
       throw err;
     }
   };
