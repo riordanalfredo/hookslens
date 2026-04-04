@@ -27,6 +27,16 @@
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
   "types": "./dist/index.d.ts",
+  "typesVersions": {
+    "*": {
+      "panel": [
+        "dist/local-lib/src/app/hookslens/page.d.ts"
+      ],
+      "dist/local-lib/src/app/hookslens/page": [
+        "dist/local-lib/src/app/hookslens/page.d.ts"
+      ]
+    }
+  },
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
@@ -34,6 +44,10 @@
       "require": "./dist/index.js"
     },
     "./panel": {
+      "types": "./dist/local-lib/src/app/hookslens/page.d.ts",
+      "import": "./dist/local-lib/src/app/hookslens/page.jsx"
+    },
+    "./dist/local-lib/src/app/hookslens/page": {
       "types": "./dist/local-lib/src/app/hookslens/page.d.ts",
       "import": "./dist/local-lib/src/app/hookslens/page.jsx"
     },

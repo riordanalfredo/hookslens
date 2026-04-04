@@ -75,7 +75,7 @@ Then open the printed local URL (default: `http://127.0.0.1:5173/`).
 Install in your Next.js app:
 
 ```bash
-npm i hookslens swr
+npm i hookslens swr --save-dev
 ```
 
 You get:
@@ -133,9 +133,7 @@ Create a tiny route page in your app:
 
 ```tsx
 // src/app/hookslens/page.tsx
-"use client";
-
-import HooksLensPanel from "hookslens/panel";
+import HooksLensPanel from "hookslens/panel"; // or import HooksLensPane from "dist/local-lib/src/app/hookslens/page"
 
 export default function Page() {
   return <HooksLensPanel />;
