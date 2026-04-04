@@ -26,8 +26,8 @@ export type FetchMethod =
  * Parsed representation of URL params from a fetch call.
  * Used to detect param shape mismatches between calls to the same endpoint.
  *
- * e.g. /api/assessments?assessmentId=1  →  { assessmentId: "1" }
- *      /api/assessments?assessment=1    →  { assessment: "1" }   ← MISMATCH flagged
+ * e.g. /api/compliance/findings?auditId=A-101  →  { auditId: "A-101" }
+ *      /api/compliance/findings?audit=A-101    →  { audit: "A-101" }   ← MISMATCH flagged
  */
 export interface ParamSnapshot {
   url: string;
@@ -40,11 +40,11 @@ export interface ParamSnapshot {
 
 /**
  * A flag raised when the same endpoint is called with inconsistent param keys.
- * e.g. sometimes { assessmentId } and sometimes { assessment }.
+ * e.g. sometimes { auditId } and sometimes { audit }.
  */
 export interface ParamMismatch {
   id: string;
-  endpoint: string; // pathname only, e.g. /api/assessments
+  endpoint: string; // pathname only, e.g. /api/compliance/findings
   seenParamSets: string[][]; // each unique set of param key names observed
   firstSeenAt: number;
   lastSeenAt: number;

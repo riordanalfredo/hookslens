@@ -5,11 +5,11 @@ let installed = false;
 /**
  * installFetchObserver()
  *
- * Wraps window.fetch to intercept ALL client-side HTTP calls — not just SWR.
+ * Wraps window.fetch to intercept ALL client-side HTTP calls, not just SWR.
  * This captures:
- *   - useEffect + fetch() patterns
- *   - axios (uses fetch under the hood in modern browsers)
- *   - any other raw fetch calls
+ *   - legacy useEffect + fetch() patterns
+ *   - compliance dashboard API calls not routed through SWR middleware
+ *   - any other raw browser fetch calls
  *
  * Calls that originated from SWR are tagged as 'swr' by the middleware.
  * Everything else is tagged as 'effect' (came from outside SWR).
@@ -18,9 +18,9 @@ let installed = false;
  * It is automatically removed in production (NODE_ENV check).
  *
  * @example
- * // src/app/layout.tsx
+ * // src/app/providers.tsx
  * 'use client';
- * import { installFetchObserver } from '@/lib/hookslens/fetchObserver';
+ * import { installFetchObserver } from 'hookslens';
  *
  * export function Providers({ children }) {
  *   useEffect(() => {

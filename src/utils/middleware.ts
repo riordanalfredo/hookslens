@@ -6,17 +6,22 @@ import { hooksLensStore, FetchMethod } from "./store";
 /**
  * hooksLensMiddleware — SWR middleware for hookslens.
  *
- * Intercepts every useSWR and useSWRMutation call and pipes:
- *  - Hook registration / unregistration with route
- *  - Fetch lifecycle (start, success, error) with duration
- *  - HTTP status codes (catches silent 4xx that don't throw)
- *  - URL and param snapshots for param mismatch detection
- *  - Concurrency and stall detection
+ * Intercepts every useSWR and useSWRMutation call and records:
+ *  - Hook registration and route-scoped lifecycle
+ *  - Fetch start/success/error with duration
+ *  - HTTP status codes (including non-thrown 4xx responses)
+ *  - URL + param snapshots for mismatch detection
+ *  - Concurrent requests and stalled request signals
  *
  * @example
+ * // app/providers.tsx
  * <SWRConfig value={{ use: [hooksLensMiddleware] }}>
- *   <App />
+ *   <AuditWorkspace />
  * </SWRConfig>
+ *
+ * @example
+ * // Typical key pattern from the demo context
+ * useSWR(['/api/compliance/findings', { auditId, controlId }], fetcher)
  */
 export const hooksLensMiddleware: Middleware = (useSWRNext: SWRHook) => {
   return (key, fetcher, config) => {
@@ -48,7 +53,7 @@ export const hooksLensMiddleware: Middleware = (useSWRNext: SWRHook) => {
 
     const wrappedFetcher = fetcher
       ? async (...args: any[]) => {
-          // The first arg to the fetcher is the key, which is often the URL
+          // Fetcher arg[0] is usually the SWR key, often a URL or tuple key.
           const url =
             typeof args[0] === "string"
               ? args[0]
@@ -69,8 +74,8 @@ export const hooksLensMiddleware: Middleware = (useSWRNext: SWRHook) => {
             const result = await (fetcher as any)(...args);
             const duration = Math.round(performance.now() - start);
 
-            // If the result has a status property (common fetcher pattern),
-            // capture it for 4xx detection
+            // Some fetchers attach status on the response payload.
+            // Capture it so non-thrown 4xx still surface in diagnostics.
             const httpStatus = (result as any)?.__status ?? 200;
 
             if (isMutation) {
@@ -93,10 +98,10 @@ export const hooksLensMiddleware: Middleware = (useSWRNext: SWRHook) => {
           } catch (err: any) {
             const duration = Math.round(performance.now() - start);
 
-            // Extract HTTP status from common error shapes:
-            // axios: err.response.status
-            // fetch + throw: err.status
-            // custom: err.statusCode
+            // Normalize HTTP status from common error shapes:
+            // axios -> err.response.status
+            // thrown fetch wrapper -> err.status
+            // custom error -> err.statusCode
             const httpStatus =
               err?.response?.status ??
               err?.status ??

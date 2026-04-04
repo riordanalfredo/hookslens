@@ -3,18 +3,18 @@ import { usePathname } from "next/navigation";
 import { hooksLensStore } from "../utils/store";
 
 export interface HooksLensOptions {
-  /** The display name shown in the hookslens panel e.g. 'useAssessments' */
+  /** The display name shown in the hookslens panel e.g. 'useComplianceFindings' */
   name: string;
   /**
    * Optional description shown in the panel — good place to note
    * what data this hook fetches and what params it expects.
-   * e.g. 'Fetches assessment list for the current teacher. Requires assessmentId param.'
+   * e.g. 'Fetches compliance findings for an audit. Requires auditId and controlId.'
    */
   description?: string;
   /**
    * The underlying fetch URL or SWR key this hook uses.
    * Connects the custom hook name to the fetch event in the timeline.
-   * e.g. '/api/assessments' or '/api/feedback?assessmentId=...'
+   * e.g. '/api/compliance/findings' or '/api/compliance/evidence?auditId=...'
    */
   fetchKey?: string;
   /**
@@ -32,31 +32,34 @@ export interface HooksLensOptions {
  * It is a no-op in production (NODE_ENV check) so there is zero runtime cost.
  *
  * @example
- * // hooks/useAssessments.ts
- * export function useAssessments(assessmentId: string) {
+ * // hooks/useComplianceFindings.ts
+ * export function useComplianceFindings(auditId: string, controlId: string) {
  *   useHooksLens({
- *     name: 'useAssessments',
- *     description: 'Fetches assessment list. Expects assessmentId (not assessment).',
- *     fetchKey: `/api/assessments?assessmentId=${assessmentId}`,
+ *     name: 'useComplianceFindings',
+ *     description: 'Fetches findings for the active audit and control.',
+ *     fetchKey: `/api/compliance/findings?auditId=${auditId}&controlId=${controlId}`,
  *   });
  *
- *   return useSWR(`/api/assessments?assessmentId=${assessmentId}`, fetcher);
+ *   return useSWR(
+ *     `/api/compliance/findings?auditId=${auditId}&controlId=${controlId}`,
+ *     fetcher,
+ *   );
  * }
  *
  * @example
- * // hooks/useSubmissions.ts — a useEffect-based hook (not SWR)
- * export function useSubmissions(submissionId: string) {
+ * // hooks/useAuditEvidence.ts — a useEffect-based hook (not SWR)
+ * export function useAuditEvidence(evidencePackId: string) {
  *   useHooksLens({
- *     name: 'useSubmissions',
+ *     name: 'useAuditEvidence',
  *     description: 'Legacy useEffect fetch — pending SWR migration.',
- *     fetchKey: `/api/submissions/${submissionId}`,
+ *     fetchKey: `/api/compliance/evidence/${evidencePackId}`,
  *     custom: true,
  *   });
  *
  *   const [data, setData] = useState(null);
  *   useEffect(() => {
- *     fetch(`/api/submissions/${submissionId}`).then(r => r.json()).then(setData);
- *   }, [submissionId]);
+ *     fetch(`/api/compliance/evidence/${evidencePackId}`).then(r => r.json()).then(setData);
+ *   }, [evidencePackId]);
  *
  *   return data;
  * }

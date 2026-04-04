@@ -46,9 +46,21 @@
     "build": "npm run clean && tsup src/index.ts --format cjs,esm --dts",
     "build:copy-template": "node ./src/scripts/build-copy-template.mjs",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "test": "vitest",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:ui": "vitest --ui",
     "pack:check": "npm pack --dry-run",
     "prepublishOnly": "npm run typecheck && npm run build && npm run build:copy-template && npm test"
+  },
+  "vitest": {
+    "include": [
+      "src/**/__tests__/**/*.{test,spec}.{ts,tsx}",
+      "src/**/*.{test,spec}.{ts,tsx}"
+    ],
+    "exclude": [
+      "**/node_modules/**",
+      "**/dist/**"
+    ]
   },
   "peerDependencies": {
     "next": ">=13.0.0",

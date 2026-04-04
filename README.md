@@ -223,7 +223,30 @@ npm install
 npm run dev
 npm run build
 npm run build:copy-template
+npm test
+npm run test:watch
 npm run pack:check
+```
+
+## Testing
+
+Test files live under `src/__tests__/` in this repo:
+
+- `src/__tests__/useHooksLens.test.ts`
+- `src/__tests__/fetchObserver.test.ts`
+- `src/__tests__/store.test.ts`
+
+Supported patterns in `package.json`:
+
+- `src/**/__tests__/**/*.{test,spec}.{ts,tsx}`
+- `src/**/*.{test,spec}.{ts,tsx}`
+
+Use these commands:
+
+```bash
+npm test         # run once (CI/publish-safe)
+npm run test:watch
+npm run test:ui
 ```
 
 ## Contributing
