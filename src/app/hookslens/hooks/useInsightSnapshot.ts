@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import type { StoreSnapshot, ThemeMode } from "../types";
 
-const STREAM_ENDPOINT = "/__hookslens/api/stream";
-const SNAPSHOT_ENDPOINT = "/__hookslens/api/hooks";
-const THEME_KEY = "__hookslens_theme";
+const STREAM_ENDPOINT = "/hookslens/api/stream";
+const SNAPSHOT_ENDPOINT = "/hookslens/api/hooks";
+const THEME_KEY = "hookslens_theme";
 
 export function useInsightSnapshot(paused: boolean) {
   const [snapshot, setSnapshot] = useState<StoreSnapshot | null>(null);

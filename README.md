@@ -5,7 +5,7 @@
 
 Developer panel for SWR and fetch behaviour in Next.js apps.
 
-Open `/__hookslens` in development to inspect:
+Open `/hookslens` in development to inspect:
 
 - active hook keys and instance counts
 - route-level filtering
@@ -29,7 +29,7 @@ Theme mode is persisted in `localStorage`.
 
 ```text
 src/
-  app/__hookslens/
+  app/hookslens/
     page.tsx
     panel.css
     components/
@@ -84,7 +84,7 @@ npm i hookslens swr
 You get two integration layers:
 
 - `hookslens` runtime hooks/instrumentation (import directly from package)
-- `/__hookslens` panel files (copy template from package into your app)
+- `/hookslens` panel files (copy template from package into your app)
 
 ## 1) Use The Hook Utilities
 
@@ -133,15 +133,15 @@ cp -R node_modules/hookslens/dist/local-lib/src/* ./src/
 
 That adds:
 
-- `src/app/__hookslens/page.tsx`
-- `src/app/__hookslens/api/hooks/route.ts`
-- `src/app/__hookslens/api/stream/route.ts`
+- `src/app/hookslens/page.tsx`
+- `src/app/hookslens/api/hooks/route.ts`
+- `src/app/hookslens/api/stream/route.ts`
 - supporting panel UI files
 
 Then open:
 
 ```text
-http://localhost:3000/__hookslens
+http://localhost:3000/hookslens
 ```
 
 ## Fastest Integration (Local Repo)
@@ -160,7 +160,7 @@ This produces:
 dist/local-lib/
   src/
     lib/hookslens/
-    app/__hookslens/
+    app/hookslens/
 ```
 
 Then copy the generated `src/` subtree into your target Next.js app `src/`.
@@ -191,7 +191,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
 Then open:
 
 ```text
-http://localhost:3000/__hookslens
+http://localhost:3000/hookslens
 ```
 
 ## Optional: Register Named Custom Hooks
@@ -212,7 +212,7 @@ The panel and instrumentation are intended for development usage:
 
 - conditionally enable middleware only in development
 - only install fetch observer in development
-- keep `__hookslens` routes available in development environments
+- keep `hookslens` routes available in development environments
 
 ## Scripts
 

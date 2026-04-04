@@ -20,7 +20,7 @@ export function Topbar({
           <div className="logo-icon">H</div>
           hookslens
         </div>
-        <span className="logo-path">/__hookslens</span>
+        <span className="logo-path">/hookslens</span>
       </div>
 
       <div className="topbar-right">

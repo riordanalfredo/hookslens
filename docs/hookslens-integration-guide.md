@@ -19,8 +19,8 @@ hookslens/
     │   ├── middleware.ts             ← SWR middleware (intercepts all useSWR)
     │   └── fetchObserver.ts          ← wraps window.fetch (catches useEffect fetches)
     └── app/
-        └── __hookslens/
-            ├── page.tsx              ← the panel UI (served at /__hookslens)
+        └── hookslens/
+            ├── page.tsx              ← the panel UI (served at /hookslens)
             └── api/
                 ├── hooks/route.ts    ← JSON snapshot endpoint
                 └── stream/route.ts   ← SSE live-push endpoint
@@ -62,7 +62,7 @@ Add the panel route by copying template files shipped in the package:
 cp -R node_modules/hookslens/dist/local-lib/src/* ./src/
 ```
 
-That creates/updates `src/app/__hookslens/*` and `src/lib/hookslens/*` in your app.
+That creates/updates `src/app/hookslens/*` and `src/lib/hookslens/*` in your app.
 
 ---
 
@@ -85,7 +85,7 @@ dist/local-lib/
   │   ├── middleware.ts
   │   ├── fetchObserver.ts
   │   └── useHooksLens.ts
-  └── app/__hookslens/
+  └── app/hookslens/
     ├── page.tsx
     ├── panel.css
     ├── types.ts
@@ -154,7 +154,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
 }
 ```
 
-That's it. Navigate to `http://localhost:3000/__hookslens` and you'll see all
+That's it. Navigate to `http://localhost:3000/hookslens` and you'll see all
 your SWR hooks and useEffect fetches immediately.
 
 ---
@@ -277,9 +277,9 @@ const toggleTheme = () => {
 
 - [ ] `hooksLensMiddleware` only added when `NODE_ENV === 'development'`
 - [ ] `installFetchObserver()` returns early when `NODE_ENV !== 'development'`
-- [ ] `/__hookslens` API routes return 404 in production
+- [ ] `/hookslens` API routes return 404 in production
 - [ ] `useHooksLens()` returns early when `NODE_ENV !== 'development'`
-- [ ] Panel page (`/__hookslens/page.tsx`) should be excluded from production bundle
+- [ ] Panel page (`/hookslens/page.tsx`) should be excluded from production bundle
 
 To exclude the panel from production builds, add to `next.config.ts`:
 
@@ -289,7 +289,7 @@ const nextConfig = {
   experimental: {
     // Exclude hookslens panel from production
     outputFileTracingExcludes: {
-      "/__hookslens": ["./src/app/__hookslens/**"],
+      "/hookslens": ["./src/app/hookslens/**"],
     },
   },
 };
@@ -304,7 +304,7 @@ import type { NextRequest } from "next/server";
 
 export function middleware(request: NextRequest) {
   if (
-    request.nextUrl.pathname.startsWith("/__hookslens") &&
+    request.nextUrl.pathname.startsWith("/hookslens") &&
     process.env.NODE_ENV !== "development"
   ) {
     return NextResponse.notFound();
