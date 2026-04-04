@@ -7,12 +7,12 @@ interface TopbarProps {
   stats: PanelStats;
 }
 
-export function Topbar({
+export const Topbar = ({
   connected,
   theme,
   onToggleTheme,
   stats,
-}: TopbarProps) {
+}: TopbarProps) => {
   return (
     <div className="topbar">
       <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
@@ -52,4 +52,4 @@ export function Topbar({
       </div>
     </div>
   );
-}
+};

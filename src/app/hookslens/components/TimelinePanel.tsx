@@ -6,15 +6,19 @@ interface TimelinePanelProps {
   entries: TimelineEvent[];
   routeFilter: string;
   fetchingCount: number;
+  expanded: boolean;
+  onToggleExpanded: () => void;
 }
 
-export function TimelinePanel({
+export const TimelinePanel = ({
   entries,
   routeFilter,
   fetchingCount,
-}: TimelinePanelProps) {
+  expanded,
+  onToggleExpanded,
+}: TimelinePanelProps) => {
   return (
-    <div className="timeline-panel">
+    <div className={`timeline-panel ${expanded ? "expanded" : ""}`}>
       <div className="panel-header">
         <div className="panel-title">
           Fetch Timeline
@@ -29,6 +33,10 @@ export function TimelinePanel({
           {entries.length} events
           {routeFilter !== "all" ? ` | ${routeFilter}` : ""}
         </div>
+
+        <button className="btn" onClick={onToggleExpanded}>
+          {expanded ? "shrink" : "expand events"}
+        </button>
       </div>
 
       <div className="timeline-scroll">
@@ -51,4 +59,4 @@ export function TimelinePanel({
       </div>
     </div>
   );
-}
+};

@@ -7,10 +7,10 @@ interface CoverageViewProps {
   diagnostics: DiagnosticSnapshot;
 }
 
-export function CoverageView({
+export const CoverageView = ({
   routeCoverage,
   diagnostics,
-}: CoverageViewProps) {
+}: CoverageViewProps) => {
   return (
     <div className="cov-grid">
       <section className="cov-card">
@@ -38,7 +38,6 @@ export function CoverageView({
                   }}
                 />
               </div>
-              <span className="cov-pct">{coverage.coveragePct}%</span>
             </div>
           ))
         )}
@@ -105,4 +104,4 @@ export function CoverageView({
       </section>
     </div>
   );
-}
+};

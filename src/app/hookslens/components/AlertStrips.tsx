@@ -6,11 +6,11 @@ interface AlertStripsProps {
   hidden: Record<"param" | "duplicate" | "stalled", boolean>;
 }
 
-export function AlertStrips({
+export const AlertStrips = ({
   diagnostics,
   onDismiss,
   hidden,
-}: AlertStripsProps) {
+}: AlertStripsProps) => {
   return (
     <div className="alert-stack">
       {diagnostics.paramMismatches.length > 0 && !hidden.param && (
@@ -59,4 +59,4 @@ export function AlertStrips({
       )}
     </div>
   );
-}
+};

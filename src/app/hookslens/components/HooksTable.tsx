@@ -10,13 +10,13 @@ interface HooksTableProps {
   onSelectRoute: (route: string) => void;
 }
 
-export function HooksTable({
+export const HooksTable = ({
   hooks,
   selectedKey,
   routeFilter,
   onSelectKey,
   onSelectRoute,
-}: HooksTableProps) {
+}: HooksTableProps) => {
   return (
     <div className="table-wrap">
       <table>
@@ -136,4 +136,4 @@ export function HooksTable({
       </table>
     </div>
   );
-}
+};

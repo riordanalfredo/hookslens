@@ -10,13 +10,13 @@ interface AllHooksViewProps {
   onSelectRoute: (route: string) => void;
 }
 
-export function AllHooksView({
+export const AllHooksView = ({
   hooks,
   selectedKey,
   routeFilter,
   onSelectKey,
   onSelectRoute,
-}: AllHooksViewProps) {
+}: AllHooksViewProps) => {
   return (
     <div className="table-wrap">
       <table className="wrap-table">
@@ -149,4 +149,4 @@ export function AllHooksView({
       </table>
     </div>
   );
-}
+};

@@ -5,24 +5,27 @@ interface CurrentPageViewProps {
   routeFilter: string;
 }
 
-function statusDotColor(status: HookEntry["status"]) {
+const statusDotColor = (status: HookEntry["status"]) => {
   if (status === "fresh") return "var(--green)";
   if (status === "fetching") return "var(--accent)";
   if (status === "stalled") return "var(--orange)";
   if (status === "stale") return "var(--yellow)";
   return "var(--red)";
-}
+};
 
-function typeLabel(type: HookEntry["type"]) {
+const typeLabel = (type: HookEntry["type"]) => {
   return type === "mutation" ? "mutation" : "query";
-}
+};
 
-function formatDuration(duration: number | null) {
+const formatDuration = (duration: number | null) => {
   if (duration == null) return "-";
   return `${duration}ms`;
-}
+};
 
-export function CurrentPageView({ hooks, routeFilter }: CurrentPageViewProps) {
+export const CurrentPageView = ({
+  hooks,
+  routeFilter,
+}: CurrentPageViewProps) => {
   const swrHooks = hooks.filter((hook) => hook.type === "query");
   const mutationHooks = hooks.filter((hook) => hook.type === "mutation");
   const slowHooks = hooks.filter((hook) => hook.slowCount > 0);
@@ -169,4 +172,4 @@ export function CurrentPageView({ hooks, routeFilter }: CurrentPageViewProps) {
       )}
     </div>
   );
-}
+};

@@ -4,7 +4,9 @@ interface ParamInspectorViewProps {
   diagnostics: DiagnosticSnapshot;
 }
 
-export function ParamInspectorView({ diagnostics }: ParamInspectorViewProps) {
+export const ParamInspectorView = ({
+  diagnostics,
+}: ParamInspectorViewProps) => {
   if (diagnostics.paramMismatches.length === 0) {
     return <div className="empty-panel">No param mismatches found</div>;
   }
@@ -59,4 +61,4 @@ export function ParamInspectorView({ diagnostics }: ParamInspectorViewProps) {
       ))}
     </div>
   );
-}
+};

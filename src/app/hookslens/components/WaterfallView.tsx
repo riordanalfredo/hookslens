@@ -4,20 +4,20 @@ interface WaterfallViewProps {
   entries: WaterfallEntry[];
 }
 
-function originLabel(origin: WaterfallEntry["origin"]) {
+const originLabel = (origin: WaterfallEntry["origin"]) => {
   if (origin === "effect") return "effect";
   if (origin === "swr") return "swr";
   return "unknown";
-}
+};
 
-function statusClass(status: WaterfallEntry["status"]) {
+const statusClass = (status: WaterfallEntry["status"]) => {
   if (status === "success") return "wf-success";
   if (status === "error") return "wf-error";
   if (status === "slow") return "wf-slow";
   return "wf-pending";
-}
+};
 
-export function WaterfallView({ entries }: WaterfallViewProps) {
+export const WaterfallView = ({ entries }: WaterfallViewProps) => {
   const minStart = entries.length
     ? Math.min(...entries.map((entry) => entry.startedAt))
     : 0;
@@ -91,4 +91,4 @@ export function WaterfallView({ entries }: WaterfallViewProps) {
       </div>
     </div>
   );
-}
+};

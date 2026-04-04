@@ -24,7 +24,7 @@ const VIEW_ITEMS: Array<{ id: ViewMode; icon: string; label: string }> = [
   { id: "polling", icon: "⟳", label: "Polling" },
 ];
 
-export function Sidebar({
+export const Sidebar = ({
   hooks,
   routes,
   routeCoverage,
@@ -35,7 +35,7 @@ export function Sidebar({
   stats,
   eventCount,
   lastUpdate,
-}: SidebarProps) {
+}: SidebarProps) => {
   const currentRouteCoverage = routeCoverage.find(
     (item) => item.route === routeFilter,
   );
@@ -157,4 +157,4 @@ export function Sidebar({
       </section>
     </aside>
   );
-}
+};

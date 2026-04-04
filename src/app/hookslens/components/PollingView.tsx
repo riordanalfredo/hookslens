@@ -4,7 +4,7 @@ interface PollingViewProps {
   hooks: HookEntry[];
 }
 
-export function PollingView({ hooks }: PollingViewProps) {
+export const PollingView = ({ hooks }: PollingViewProps) => {
   const pollingHooks = hooks.filter((hook) => hook.refreshInterval != null);
 
   if (pollingHooks.length === 0) {
@@ -61,4 +61,4 @@ export function PollingView({ hooks }: PollingViewProps) {
       </table>
     </div>
   );
-}
+};

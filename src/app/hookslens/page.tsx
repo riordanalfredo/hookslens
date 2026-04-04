@@ -17,12 +17,13 @@ import { formatTime, getPanelStats } from "./lib/format";
 import type { StoreSnapshot, ViewMode } from "./types";
 import "@/app/hookslens/panel.css";
 
-export default function HooksLensPane() {
+const HooksLensPane = () => {
   const [paused, setPaused] = useState(false);
   const [search, setSearch] = useState("");
   const [routeFilter, setRouteFilter] = useState("all");
   const [activeView, setActiveView] = useState<ViewMode>("waterfall");
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
+  const [eventsExpanded, setEventsExpanded] = useState(false);
   const [hiddenAlerts, setHiddenAlerts] = useState({
     param: false,
     duplicate: false,
@@ -267,9 +268,13 @@ export default function HooksLensPane() {
             entries={activeRouteTimeline}
             routeFilter={routeFilter}
             fetchingCount={stats.fetchingCount}
+            expanded={eventsExpanded}
+            onToggleExpanded={() => setEventsExpanded((current) => !current)}
           />
         </div>
       </div>
     </div>
   );
-}
+};
+
+export default HooksLensPane;
