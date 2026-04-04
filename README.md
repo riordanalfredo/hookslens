@@ -214,10 +214,6 @@ export const SWRProvider = ({ children }: SWRProviderProps) => {
   return (
     <SWRConfig
       value={{
-        dedupingInterval: 2000,
-        revalidateOnFocus: false,
-        revalidateOnReconnect: false,
-        keepPreviousData: true,
         use: swrUse,
       }}
     >
@@ -231,18 +227,6 @@ Then open:
 
 ```text
 http://localhost:3000/hookslens
-```
-
-## Optional: Register Named Custom Hooks
-
-```ts
-import { useHooksLens } from "hookslens";
-
-useHooksLens({
-  name: "usePartnerFeedback",
-  description: "Fetches partner feedback",
-  fetchKey: `/api/feedback?assessmentId=${assessmentId}`,
-});
 ```
 
 ## Dev-Only Safety

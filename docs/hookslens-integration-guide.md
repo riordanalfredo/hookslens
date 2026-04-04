@@ -198,51 +198,51 @@ Without it, the hook still appears via its SWR key — you just lose the human n
 **Before:**
 
 ```ts
-// src/hooks/usePartnerFeedback.ts
-export function usePartnerFeedback(assessmentId: string, questionId: string) {
-  return useSWR(["/api/feedback", { assessmentId, questionId }], fetcher);
+// src/hooks/useComplianceFindings.ts
+export function useComplianceFindings(auditId: string, controlId: string) {
+  return useSWR(["/api/compliance/findings", { auditId, controlId }], fetcher);
 }
 ```
 
 **After:**
 
 ```ts
-// src/hooks/usePartnerFeedback.ts
+// src/hooks/useComplianceFindings.ts
 import { useHooksLens } from "hookslens";
 
-export function usePartnerFeedback(assessmentId: string, questionId: string) {
+export function useComplianceFindings(auditId: string, controlId: string) {
   // dev-only, no-op in production
   useHooksLens({
-    name: "usePartnerFeedback",
+    name: "useComplianceFindings",
     description:
-      "Fetches partner feedback. Expects assessmentId and questionId params.",
-    fetchKey: `/api/feedback?assessmentId=${assessmentId}&questionId=${questionId}`,
+      "Fetches compliance findings. Expects auditId and controlId params.",
+    fetchKey: `/api/compliance/findings?auditId=${auditId}&controlId=${controlId}`,
   });
 
-  return useSWR(["/api/feedback", { assessmentId, questionId }], fetcher);
+  return useSWR(["/api/compliance/findings", { auditId, controlId }], fetcher);
 }
 ```
 
 **For legacy useEffect hooks** (migration candidates):
 
 ```ts
-// src/hooks/useLoadCompleteSubmission.ts
+// src/hooks/useLoadRemediationPlan.ts
 import { useHooksLens } from "hookslens";
 
-export function useLoadCompleteSubmission(submissionId: string) {
+export function useLoadRemediationPlan(planId: string) {
   useHooksLens({
-    name: "useLoadCompleteSubmission",
+    name: "useLoadRemediationPlan",
     description: "Legacy useEffect fetch — pending SWR migration.",
-    fetchKey: `/api/submissions/${submissionId}`,
+    fetchKey: `/api/compliance/remediation-plans/${planId}`,
     custom: true,
   });
 
   const [data, setData] = useState(null);
   useEffect(() => {
-    fetch(`/api/submissions/${submissionId}`)
+    fetch(`/api/compliance/remediation-plans/${planId}`)
       .then((r) => r.json())
       .then(setData);
-  }, [submissionId]);
+  }, [planId]);
 
   return data;
 }
@@ -278,18 +278,18 @@ const toggleTheme = () => {
 
 ## What hookslens catches automatically (no extra code)
 
-| Scenario                                        | How detected                                       |
-| ----------------------------------------------- | -------------------------------------------------- |
-| `useSWR` hook registered on a page              | `hooksLensMiddleware` via `SWRConfig.use`          |
-| `useSWRMutation` triggered                      | Same middleware, `isMutation` flag                 |
-| `useEffect + fetch` call                        | `installFetchObserver` wraps `window.fetch`        |
-| Slow fetch (>1000ms)                            | Duration tracked in `recordFetchSuccess`           |
-| Stalled hook (>5s in-flight)                    | `setTimeout` in `recordFetchStart`                 |
-| 4xx response                                    | HTTP status extracted from error shape             |
-| Duplicate fetch (SWR + useEffect, same URL)     | `checkDuplicateFetch` cross-references URL maps    |
-| Param mismatch (`assessmentId` vs `assessment`) | `detectParamMismatch` compares query key sets      |
-| Per-page hook scoping                           | `usePathname()` captured at middleware render time |
-| Multi-tab panel updates                         | `BroadcastChannel` + shared `hooksLensStore`       |
+| Scenario                                    | How detected                                       |
+| ------------------------------------------- | -------------------------------------------------- |
+| `useSWR` hook registered on a page          | `hooksLensMiddleware` via `SWRConfig.use`          |
+| `useSWRMutation` triggered                  | Same middleware, `isMutation` flag                 |
+| `useEffect + fetch` call                    | `installFetchObserver` wraps `window.fetch`        |
+| Slow fetch (>1000ms)                        | Duration tracked in `recordFetchSuccess`           |
+| Stalled hook (>5s in-flight)                | `setTimeout` in `recordFetchStart`                 |
+| 4xx response                                | HTTP status extracted from error shape             |
+| Duplicate fetch (SWR + useEffect, same URL) | `checkDuplicateFetch` cross-references URL maps    |
+| Param mismatch (`auditId` vs `audit`)       | `detectParamMismatch` compares query key sets      |
+| Per-page hook scoping                       | `usePathname()` captured at middleware render time |
+| Multi-tab panel updates                     | `BroadcastChannel` + shared `hooksLensStore`       |
 
 ---
 
