@@ -1,6 +1,6 @@
 {
   "name": "hookslens",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Developer panel for monitoring hooks in Next.js apps — SWR hooks, hook registry, fetch timeline, polling detector, and dedup visualiser.",
   "keywords": [
     "swr",
