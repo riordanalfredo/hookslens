@@ -253,6 +253,10 @@ npm run test:ui
 
 Contribution guide: [CONTRIBUTING.md](CONTRIBUTING.md)
 
+## GenAI Disclosure
+
+Parts of this project were developed with assistance from generative AI tools, including Claude.
+
 ## License
 
 License text: [LICENSE](LICENSE)
