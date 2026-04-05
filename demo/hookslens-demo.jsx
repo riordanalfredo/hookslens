@@ -1,3 +1,6 @@
+/**
+ * Generated demo component showcasing HooksLens features and UI components. Using Claude AI with a custom prompt to generate realistic demo data and descriptions. Not intended for production use or as a reference implementation.
+ */
 import { useState, useEffect, useRef } from "react";
 
 const FONTS = `@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=Syne:wght@700;800&display=swap');`;
@@ -518,6 +521,7 @@ const COVERAGE = [
 const MISMATCHES = [
   {
     endpoint: "/api/reviews",
+    route: "/products/[productId]",
     sets: [
       ["productId", "page"],
       ["product", "page"],
@@ -831,15 +835,25 @@ export default function HooksLens() {
   const pages = Object.keys(PAGES);
   const pg = PAGES[page];
   const allOnPage = [...pg.swr, ...pg.custom, ...pg.effect];
-  const allHooks = pages.flatMap((p) => [
-    ...PAGES[p].swr,
-    ...PAGES[p].custom,
-    ...PAGES[p].effect,
-  ]);
+  const allHooks = pages.flatMap((p) =>
+    [...PAGES[p].swr, ...PAGES[p].custom, ...PAGES[p].effect].map((h) => ({
+      ...h,
+      route: p,
+    })),
+  );
   const filtered = allHooks.filter(
     (h) =>
-      h.hookName.toLowerCase().includes(search.toLowerCase()) ||
-      h.key.toLowerCase().includes(search.toLowerCase()),
+      (rf === "all" || h.route === rf) &&
+      (h.hookName.toLowerCase().includes(search.toLowerCase()) ||
+        h.key.toLowerCase().includes(search.toLowerCase())),
+  );
+  const fCoverage =
+    rf === "all" ? COVERAGE : COVERAGE.filter((c) => c.route === rf);
+  const fMismatches =
+    rf === "all" ? MISMATCHES : MISMATCHES.filter((m) => m.route === rf);
+  const fWf = rf === "all" ? WF : WF.filter((w) => w.route === rf);
+  const fPollingHooks = allHooks.filter(
+    (h) => h.interval && (rf === "all" || h.route === rf),
   );
 
   const paramCt = MISMATCHES.length;
@@ -848,7 +862,7 @@ export default function HooksLens() {
   const badReqCt = allHooks.filter((h) => h.badReq > 0).length;
   const pollingCt = allHooks.filter((h) => h.interval).length;
   const fTl = rf === "all" ? tl : tl.filter((e) => e.route === rf);
-  const wfMax = Math.max(...WF.map((w) => w.start + (w.dur || 1200)), 1500);
+  const wfMax = Math.max(...fWf.map((w) => w.start + (w.dur || 1200)), 1500);
 
   const themeVars = dark ? DARK : LIGHT;
 
@@ -1001,10 +1015,9 @@ export default function HooksLens() {
           {/* Alert strips */}
           {paramCt > 0 && !dimP && (
             <div className="alert-strip purple">
-              <strong>⊛ Param mismatch</strong> —{" "}
-              <code>/api/reviews</code> uses <code>productId</code> in
-              SWR but <code>product</code> in useEffect. API returns 400 on the
-              SWR call.
+              <strong>⊛ Param mismatch</strong> — <code>/api/reviews</code> uses{" "}
+              <code>productId</code> in SWR but <code>product</code> in
+              useEffect. API returns 400 on the SWR call.
               <span className="alert-dismiss" onClick={() => setDimP(true)}>
                 ×
               </span>
@@ -1012,9 +1025,8 @@ export default function HooksLens() {
           )}
           {dupCt > 0 && !dimD && (
             <div className="alert-strip orange">
-              <strong>⧉ Duplicate</strong> —{" "}
-              <code>/api/reviews</code> fired by both SWR and
-              useEffect on <code>{page}</code>. Remove one.
+              <strong>⧉ Duplicate</strong> — <code>/api/reviews</code> fired by
+              both SWR and useEffect on <code>{page}</code>. Remove one.
               <span className="alert-dismiss" onClick={() => setDimD(true)}>
                 ×
               </span>
@@ -1022,9 +1034,8 @@ export default function HooksLens() {
           )}
           {stallCt > 0 && (
             <div className="alert-strip red">
-              <strong>⚠ Stalled</strong> — <code>useCart</code>{" "}
-              in-flight &gt;5s on <code>/cart</code>. Heavy render
-              or blocked upstream promise.
+              <strong>⚠ Stalled</strong> — <code>useCart</code> in-flight &gt;5s
+              on <code>/cart</code>. Heavy render or blocked upstream promise.
             </div>
           )}
 
@@ -1264,79 +1275,87 @@ export default function HooksLens() {
                 another — a common bug during SWR migration when the old
                 useEffect and new SWR hook use different param names.
               </p>
-              {MISMATCHES.map((m, i) => (
-                <div key={i} className="pi-card">
-                  <div className="pi-header">
-                    <span
-                      className="mono"
-                      style={{ fontWeight: 700, fontSize: 12 }}
-                    >
-                      {m.endpoint}
-                    </span>
-                    <Badge c="mismatch">⊛ {m.count} mismatched calls</Badge>
-                  </div>
-                  <div className="pi-body">
-                    <div
-                      style={{
-                        fontSize: 12,
-                        color: "var(--text3)",
-                        marginBottom: 8,
-                      }}
-                    >
-                      Param key shapes seen on this endpoint:
+              {fMismatches.length === 0 ? (
+                <div className="empty-panel">
+                  No param mismatches for this page
+                </div>
+              ) : (
+                fMismatches.map((m, i) => (
+                  <div key={i} className="pi-card">
+                    <div className="pi-header">
+                      <span
+                        className="mono"
+                        style={{ fontWeight: 700, fontSize: 12 }}
+                      >
+                        {m.endpoint}
+                      </span>
+                      <Badge c="mismatch">⊛ {m.count} mismatched calls</Badge>
                     </div>
-                    <div className="pi-shapes">
-                      {m.sets.map((s, j) => (
+                    <div className="pi-body">
+                      <div
+                        style={{
+                          fontSize: 12,
+                          color: "var(--text3)",
+                          marginBottom: 8,
+                        }}
+                      >
+                        Param key shapes seen on this endpoint:
+                      </div>
+                      <div className="pi-shapes">
+                        {m.sets.map((s, j) => (
+                          <div
+                            key={j}
+                            className={`pi-shape shape-${j === 0 ? "a" : "b"}`}
+                          >
+                            <div className="pi-shape-label">
+                              Shape {j + 1} ·{" "}
+                              {j === 0 ? "SWR hook" : "useEffect"}
+                            </div>
+                            <div className="pi-shape-keys">
+                              {s.map((k, ki) => (
+                                <span
+                                  key={ki}
+                                  className="pi-key"
+                                  style={{ marginRight: 6 }}
+                                >
+                                  {k}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                      <div
+                        style={{
+                          fontSize: 12,
+                          color: "var(--text3)",
+                          marginTop: 8,
+                          marginBottom: 4,
+                        }}
+                      >
+                        Example URLs:
+                      </div>
+                      {m.examples.map((u, j) => (
                         <div
                           key={j}
-                          className={`pi-shape shape-${j === 0 ? "a" : "b"}`}
+                          className={`pi-example ex-${j === 0 ? "a" : "b"}`}
                         >
-                          <div className="pi-shape-label">
-                            Shape {j + 1} · {j === 0 ? "SWR hook" : "useEffect"}
-                          </div>
-                          <div className="pi-shape-keys">
-                            {s.map((k, ki) => (
-                              <span
-                                key={ki}
-                                className="pi-key"
-                                style={{ marginRight: 6 }}
-                              >
-                                {k}
-                              </span>
-                            ))}
-                          </div>
+                          {u}
                         </div>
                       ))}
-                    </div>
-                    <div
-                      style={{
-                        fontSize: 12,
-                        color: "var(--text3)",
-                        marginTop: 8,
-                        marginBottom: 4,
-                      }}
-                    >
-                      Example URLs:
-                    </div>
-                    {m.examples.map((u, j) => (
-                      <div
-                        key={j}
-                        className={`pi-example ex-${j === 0 ? "a" : "b"}`}
-                      >
-                        {u}
+                      <div className="pi-fix">
+                        <strong style={{ color: "var(--purple)" }}>Fix:</strong>{" "}
+                        Search codebase for both{" "}
+                        <code className="mono">{m.sets[0]?.join(", ")}</code>{" "}
+                        and{" "}
+                        <code className="mono">{m.sets[1]?.join(", ")}</code> —
+                        standardise to whichever the API route handler expects
+                        and update all call sites.
                       </div>
-                    ))}
-                    <div className="pi-fix">
-                      <strong style={{ color: "var(--purple)" }}>Fix:</strong>{" "}
-                      Search codebase for both{" "}
-                      <code className="mono">{m.sets[0]?.join(", ")}</code> and{" "}
-                      <code className="mono">{m.sets[1]?.join(", ")}</code> —
-                      standardise to whichever the API route handler expects and
-                      update all call sites.
                     </div>
                   </div>
-                </div>
-              ))}
+                ))
+              )}
             </div>
           )}
 
@@ -1364,7 +1383,7 @@ export default function HooksLens() {
                       % via SWR
                     </span>
                   </div>
-                  {COVERAGE.map((c, i) => (
+                  {fCoverage.map((c, i) => (
                     <div key={i} className="cov-row">
                       <div className="cov-key">{c.route}</div>
                       <div className="cov-bar-track">
@@ -1407,48 +1426,50 @@ export default function HooksLens() {
                       same URL — SWR + useEffect
                     </span>
                   </div>
-                  {COVERAGE.filter((c) => c.dups.length > 0).length === 0 ? (
+                  {fCoverage.filter((c) => c.dups.length > 0).length === 0 ? (
                     <div className="cov-empty">None found ✓</div>
                   ) : (
-                    COVERAGE.filter((c) => c.dups.length > 0).map((c, i) => (
-                      <div
-                        key={i}
-                        style={{
-                          padding: "5px 12px",
-                          borderBottom: "1px solid var(--border)",
-                        }}
-                      >
+                    fCoverage
+                      .filter((c) => c.dups.length > 0)
+                      .map((c, i) => (
                         <div
+                          key={i}
                           style={{
-                            fontSize: 11,
-                            marginBottom: 2,
-                            fontFamily: "JetBrains Mono,monospace",
-                            color: "var(--text2)",
+                            padding: "5px 12px",
+                            borderBottom: "1px solid var(--border)",
                           }}
                         >
-                          {c.route}
-                        </div>
-                        {c.dups.map((d, j) => (
                           <div
-                            key={j}
-                            className="cov-row"
-                            style={{ padding: "2px 0" }}
+                            style={{
+                              fontSize: 11,
+                              marginBottom: 2,
+                              fontFamily: "JetBrains Mono,monospace",
+                              color: "var(--text2)",
+                            }}
                           >
-                            <Badge c="dup">⧉</Badge>
-                            <span
-                              style={{
-                                fontSize: 11,
-                                color: "var(--text3)",
-                                marginLeft: 4,
-                                fontFamily: "JetBrains Mono,monospace",
-                              }}
-                            >
-                              {d}
-                            </span>
+                            {c.route}
                           </div>
-                        ))}
-                      </div>
-                    ))
+                          {c.dups.map((d, j) => (
+                            <div
+                              key={j}
+                              className="cov-row"
+                              style={{ padding: "2px 0" }}
+                            >
+                              <Badge c="dup">⧉</Badge>
+                              <span
+                                style={{
+                                  fontSize: 11,
+                                  color: "var(--text3)",
+                                  marginLeft: 4,
+                                  fontFamily: "JetBrains Mono,monospace",
+                                }}
+                              >
+                                {d}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      ))
                   )}
                 </div>
                 <div className="cov-card">
@@ -1458,12 +1479,13 @@ export default function HooksLens() {
                       same endpoint, diff keys
                     </span>
                   </div>
-                  {COVERAGE.filter((c) => c.inconsistent.length > 0).length ===
+                  {fCoverage.filter((c) => c.inconsistent.length > 0).length ===
                   0 ? (
                     <div className="cov-empty">None found ✓</div>
                   ) : (
-                    COVERAGE.filter((c) => c.inconsistent.length > 0).map(
-                      (c, i) => (
+                    fCoverage
+                      .filter((c) => c.inconsistent.length > 0)
+                      .map((c, i) => (
                         <div key={i} className="cov-row">
                           <div className="cov-key">{c.route}</div>
                           {c.inconsistent.map((u, j) => (
@@ -1472,8 +1494,7 @@ export default function HooksLens() {
                             </Badge>
                           ))}
                         </div>
-                      ),
-                    )
+                      ))
                   )}
                 </div>
                 <div className="cov-card">
@@ -1483,17 +1504,21 @@ export default function HooksLens() {
                       0% SWR, all useEffect
                     </span>
                   </div>
-                  {COVERAGE.filter((c) => c.swr === 0).length === 0 ? (
+                  {fCoverage.filter((c) => c.swr === 0).length === 0 ? (
                     <div className="cov-empty">All pages use SWR ✓</div>
                   ) : (
-                    COVERAGE.filter((c) => c.swr === 0).map((c, i) => (
-                      <div key={i} className="cov-row">
-                        <div className="cov-key">{c.route}</div>
-                        <span style={{ fontSize: 11, color: "var(--orange)" }}>
-                          {c.effect} raw fetches
-                        </span>
-                      </div>
-                    ))
+                    fCoverage
+                      .filter((c) => c.swr === 0)
+                      .map((c, i) => (
+                        <div key={i} className="cov-row">
+                          <div className="cov-key">{c.route}</div>
+                          <span
+                            style={{ fontSize: 11, color: "var(--orange)" }}
+                          >
+                            {c.effect} raw fetches
+                          </span>
+                        </div>
+                      ))
                   )}
                 </div>
               </div>
@@ -1530,41 +1555,47 @@ export default function HooksLens() {
                 </div>
               </div>
               <div style={{ overflowY: "auto", flex: 1 }}>
-                {WF.map((w) => {
-                  const lp = (w.start / wfMax) * 100;
-                  const wp = w.dur ? Math.max((w.dur / wfMax) * 100, 1.5) : 8;
-                  return (
-                    <div key={w.id} className="wf-row">
-                      <div className="wf-key" title={w.key}>
-                        {w.key}
-                      </div>
-                      <div className="wf-origin">
-                        <Badge c={w.origin}>{w.origin}</Badge>
-                      </div>
-                      <div className="wf-route">{w.route}</div>
-                      <div className="wf-track">
-                        <div
-                          className={`wf-bar ${w.status}`}
-                          style={{ left: `${lp}%`, width: `${wp}%` }}
-                        >
-                          {w.dur ? `${w.dur}ms` : "…"}
+                {fWf.length === 0 ? (
+                  <div className="cov-empty" style={{ margin: 12 }}>
+                    No waterfall entries for this page
+                  </div>
+                ) : (
+                  fWf.map((w) => {
+                    const lp = (w.start / wfMax) * 100;
+                    const wp = w.dur ? Math.max((w.dur / wfMax) * 100, 1.5) : 8;
+                    return (
+                      <div key={w.id} className="wf-row">
+                        <div className="wf-key" title={w.key}>
+                          {w.key}
+                        </div>
+                        <div className="wf-origin">
+                          <Badge c={w.origin}>{w.origin}</Badge>
+                        </div>
+                        <div className="wf-route">{w.route}</div>
+                        <div className="wf-track">
+                          <div
+                            className={`wf-bar ${w.status}`}
+                            style={{ left: `${lp}%`, width: `${wp}%` }}
+                          >
+                            {w.dur ? `${w.dur}ms` : "…"}
+                          </div>
+                        </div>
+                        <div className="wf-dur">
+                          {w.http ? (
+                            <Badge c={httpCls(w.http)}>{w.http}</Badge>
+                          ) : (
+                            "—"
+                          )}
+                        </div>
+                        <div className="wf-conc">
+                          {w.conc.length > 0 && (
+                            <span className="conc-badge">+{w.conc.length}</span>
+                          )}
                         </div>
                       </div>
-                      <div className="wf-dur">
-                        {w.http ? (
-                          <Badge c={httpCls(w.http)}>{w.http}</Badge>
-                        ) : (
-                          "—"
-                        )}
-                      </div>
-                      <div className="wf-conc">
-                        {w.conc.length > 0 && (
-                          <span className="conc-badge">+{w.conc.length}</span>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })}
+                    );
+                  })
+                )}
               </div>
             </div>
           )}
@@ -1584,9 +1615,16 @@ export default function HooksLens() {
                     </tr>
                   </thead>
                   <tbody>
-                    {allHooks
-                      .filter((h) => h.interval)
-                      .map((h) => (
+                    {fPollingHooks.length === 0 ? (
+                      <tr>
+                        <td colSpan={5}>
+                          <div className="empty-panel">
+                            No polling hooks for this page
+                          </div>
+                        </td>
+                      </tr>
+                    ) : (
+                      fPollingHooks.map((h) => (
                         <tr key={h.id} className="trow">
                           <td>
                             <span className="mono" style={{ fontWeight: 700 }}>
@@ -1616,7 +1654,8 @@ export default function HooksLens() {
                             <Badge c={h.status}>{h.status}</Badge>
                           </td>
                         </tr>
-                      ))}
+                      ))
+                    )}
                   </tbody>
                 </table>
               </div>

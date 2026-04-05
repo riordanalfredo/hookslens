@@ -73,12 +73,14 @@ const HooksLensPane = () => {
   const filteredHooks = useMemo(
     () =>
       hooks.filter((hook) => {
+        const matchesRoute =
+          routeFilter === "all" || hook.routes.includes(routeFilter);
         const matchesSearch =
           hook.key.toLowerCase().includes(searchTerm) ||
           (hook.lastUrl ?? hook.key).toLowerCase().includes(searchTerm);
-        return matchesSearch;
+        return matchesRoute && matchesSearch;
       }),
-    [hooks, searchTerm],
+    [hooks, routeFilter, searchTerm],
   );
 
   const activeRouteTimeline = useMemo(
