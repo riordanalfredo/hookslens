@@ -63,6 +63,7 @@
     "dev": "tsup src/index.ts --watch --format cjs,esm --dts",
     "demo": "vite --config demo/vite.config.mjs",
     "build": "npm run clean && tsup src/index.ts --format cjs,esm --dts",
+    "build:demo": "vite build --config demo/vite.config.mjs",
     "build:local-lib": "node ./scripts/build-local-lib.mjs",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run",
