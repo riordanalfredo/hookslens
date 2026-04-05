@@ -7,21 +7,32 @@ Thanks for your interest in contributing. This is a small, focused tool — cont
 ```bash
 git clone https://github.com/riordanalfredo/hookslens
 cd hookslens
-npm install        # installs workspaces
-npm run dev        # watches all packages
+npm install
+npm run dev        # watches and builds the library
+npm run demo       # run the standalone demo
 ```
 
-The repo uses a simple npm workspaces monorepo (no Turborepo required to get started).
-
-## Structure
+## Repository Structure
 
 ```
-packages/hookslens/
-  src/
-    hooks/         — React hooks (useHooksLens)
-    utils/         — store, middleware, Next.js plugin
-    app/    — panel UI components
-    scripts/    — simple JS scripts, e.g., to generate local lib
+src/
+  lib/hookslens/
+    store/              — State management and tracking
+      trackers/         — Diagnostic trackers (mismatch, waterfall, coverage)
+    middleware.ts       — SWR middleware
+    fetchObserver.ts    — Fetch interception
+    useHooksLens.ts     — Hook registration API
+  app/hookslens/
+    components/         — Panel UI components
+    hooks/              — Panel-specific hooks
+    page.tsx            — Main panel component
+    panel.css           — Panel styles
+  __tests__/            — Test files
+  index.ts              — Public API exports
+
+scripts/                — Build scripts (e.g., build-local-lib.mjs)
+demo/                   — Standalone demo application
+dist/                   — Built artifacts (not in git)
 ```
 
 ## Development workflow

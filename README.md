@@ -105,8 +105,10 @@ A standalone mock demo is included in [hookslens-demo.jsx](./demo/hookslens-demo
 **Demo Features:**
 
 - Static mock data for UI preview (not connected to runtime)
-- Healthcare compliance scenarios (mismatch detection, duplicate fetches, stalled polling)
+- Common SWR debugging scenarios: parameter mismatches, duplicate fetches, stalled polling, concurrent requests
 - Works in any React sandbox or local React app
+
+> **Note:** The demo currently includes placeholder data. The patterns shown (duplicates, mismatches, stalling) apply to any Next.js + SWR application.
 
 **Run locally:**
 
@@ -174,9 +176,9 @@ export const SWRProvider = ({ children }: SWRProviderProps) => {
 import { useHooksLens } from "hookslens";
 
 useHooksLens({
-  name: "useComplianceFindings",
-  description: "Fetches compliance findings by auditId",
-  fetchKey: `/api/compliance/findings?auditId=${auditId}`,
+  name: "useProductReviews",
+  description: "Fetches reviews by productId",
+  fetchKey: `/api/reviews?productId=${productId}`,
 });
 ```
 

@@ -1,0 +1,88 @@
+name: Feature Request
+description: Suggest a new feature or enhancement
+title: "[Feature]: "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for your interest in improving HooksLens! Please describe your feature idea below.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem Statement
+      description: Is your feature request related to a problem? Please describe the debugging or development workflow issue you're facing.
+      placeholder: I'm frustrated when debugging SWR hooks because...
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed Solution
+      description: Describe the solution you'd like to see
+      placeholder: The panel could show...
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives Considered
+      description: Have you considered any alternative solutions or features?
+      placeholder: I've tried using React DevTools but...
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Which area would this affect?
+      multiple: true
+      options:
+        - Panel UI
+        - SWR Middleware
+        - Fetch Observer
+        - Timeline/Events
+        - Hook Registration
+        - Documentation
+        - Developer Experience
+        - Other
+    validations:
+      required: true
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: How important is this to you?
+      options:
+        - Critical - blocking my workflow
+        - High - would significantly improve my workflow
+        - Medium - nice to have
+        - Low - minor improvement
+    validations:
+      required: true
+
+  - type: textarea
+    id: use-case
+    attributes:
+      label: Use Case
+      description: Describe your specific use case or scenario
+      placeholder: In my Next.js app, I have 20+ SWR hooks and need to...
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional Context
+      description: Add any other context, mockups, or examples about the feature request here.
+
+  - type: checkboxes
+    id: terms
+    attributes:
+      label: Checklist
+      options:
+        - label: I have searched existing issues and feature requests to avoid duplicates
+          required: true
+        - label: This feature aligns with HooksLens' focus on SWR + Next.js development debugging
+          required: true
+        - label: I am willing to help implement or test this feature
+          required: false

@@ -244,13 +244,13 @@ td{padding:8px 12px;vertical-align:middle;}
 
 // ─── Mock data ──────────────────────
 const PAGES = {
-  "/compliance/audits/[auditId]": {
+  "/products/[productId]": {
     swr: [
       {
         id: 1,
-        hookName: "useControlMatrix",
-        desc: "Fetches HIPAA control matrix for selected audit. SWR.",
-        key: "/api/compliance/controls/[controlSetId]",
+        hookName: "useProduct",
+        desc: "Fetches product details and pricing. SWR.",
+        key: "/api/products/[productId]",
         type: "swr",
         status: "fresh",
         dur: 89,
@@ -264,9 +264,9 @@ const PAGES = {
       },
       {
         id: 2,
-        hookName: "useComplianceFindings",
-        desc: "Compliance findings. SWR. Sends auditId while legacy useEffect still sends audit. API 400s on SWR request.",
-        key: "['/api/compliance/findings',{auditId:'A-101',controlId:'164.312(a)(2)'}]",
+        hookName: "useReviews",
+        desc: "Product reviews. SWR. Sends productId while legacy useEffect still sends product. API 400s on SWR request.",
+        key: "['/api/reviews',{productId:'P-301',page:1}]",
         type: "swr",
         status: "error",
         dur: null,
@@ -280,9 +280,9 @@ const PAGES = {
       },
       {
         id: 3,
-        hookName: "useAuditEvidence",
-        desc: "Evidence pack metadata. SWR with 10s polling.",
-        key: "/api/compliance/evidence/[evidencePackId]",
+        hookName: "useInventory",
+        desc: "Stock level monitoring. SWR with 10s polling.",
+        key: "/api/inventory/[productId]",
         type: "swr",
         status: "fresh",
         dur: 203,
@@ -296,9 +296,9 @@ const PAGES = {
       },
       {
         id: 4,
-        hookName: "submitRemediationPlan",
-        desc: "Mutation that submits remediation plan and owner assignment. useSWRMutation.",
-        key: "submitRemediationPlan",
+        hookName: "addToCart",
+        desc: "Mutation that adds product to cart. useSWRMutation.",
+        key: "addToCart",
         type: "mutation",
         status: "fresh",
         dur: 312,
@@ -314,9 +314,9 @@ const PAGES = {
     custom: [
       {
         id: 5,
-        hookName: "useAuditWorkspace",
-        desc: "Custom hook composing useAuditEvidence + useReviewerAssignments. Creates 2 overlapping SWR subscriptions pending cleanup.",
-        key: "/api/compliance/evidence/[id] + /api/compliance/reviewers",
+        hookName: "useProductBundle",
+        desc: "Custom hook composing useProduct + useRecommendations. Creates 2 overlapping SWR subscriptions pending cleanup.",
+        key: "/api/products/[id] + /api/recommendations/[id]",
         type: "custom",
         status: "fresh",
         dur: 390,
@@ -332,9 +332,9 @@ const PAGES = {
     effect: [
       {
         id: 6,
-        hookName: "useEffect (findings)",
-        desc: "Legacy useEffect findings fetch. Uses audit param and conflicts with SWR hook using auditId.",
-        key: "/api/compliance/findings?audit=A-101&controlId=164.312(a)(2)",
+        hookName: "useEffect (reviews)",
+        desc: "Legacy useEffect reviews fetch. Uses product param and conflicts with SWR hook using productId.",
+        key: "/api/reviews?product=P-301&page=1",
         type: "effect",
         status: "fresh",
         dur: 290,
@@ -348,13 +348,13 @@ const PAGES = {
       },
     ],
   },
-  "/compliance/policies": {
+  "/catalog": {
     swr: [
       {
         id: 7,
-        hookName: "usePolicyCatalog",
-        desc: "Paginated policy catalog and owner metadata.",
-        key: "['/api/compliance/policies',{page:1}]",
+        hookName: "useProductList",
+        desc: "Paginated product catalog with filters.",
+        key: "['/api/products',{page:1,category:'electronics'}]",
         type: "swr",
         status: "fresh",
         dur: 142,
@@ -371,9 +371,9 @@ const PAGES = {
     effect: [
       {
         id: 8,
-        hookName: "useEffect (policies)",
-        desc: "Legacy useEffect calling same URL as usePolicyCatalog. Duplicate candidate to remove.",
-        key: "/api/compliance/policies?page=1",
+        hookName: "useEffect (catalog)",
+        desc: "Legacy useEffect calling same URL as useProductList. Duplicate candidate to remove.",
+        key: "/api/products?page=1&category=electronics",
         type: "effect",
         status: "fresh",
         dur: 155,
@@ -387,13 +387,13 @@ const PAGES = {
       },
     ],
   },
-  "/compliance/incidents": {
+  "/orders": {
     swr: [
       {
         id: 9,
-        hookName: "useIncidentQueue",
-        desc: "Incident triage queue. Consistently slow with intermittent 500 responses.",
-        key: "/api/compliance/incidents/[queueId]",
+        hookName: "useOrders",
+        desc: "Order history fetch. Consistently slow with intermittent 500 responses.",
+        key: "/api/orders/[userId]",
         type: "swr",
         status: "error",
         dur: 4021,
@@ -410,9 +410,9 @@ const PAGES = {
     effect: [
       {
         id: 10,
-        hookName: "useEffect (incidents x3)",
-        desc: "Three separate incident useEffect calls. Candidate for one consolidated useSWR key.",
-        key: "/api/compliance/incidents?queueId=7",
+        hookName: "useEffect (orders x3)",
+        desc: "Three separate order useEffect calls. Candidate for one consolidated useSWR key.",
+        key: "/api/orders?userId=42",
         type: "effect",
         status: "fresh",
         dur: 112,
@@ -426,13 +426,13 @@ const PAGES = {
       },
     ],
   },
-  "/compliance/vendors": {
+  "/cart": {
     swr: [
       {
         id: 11,
-        hookName: "useVendorAttestations",
-        desc: "Vendor attestations. 3s polling. Currently stalled and likely blocked by expensive render path.",
-        key: "/api/compliance/vendors/attestations",
+        hookName: "useCart",
+        desc: "Shopping cart state. 3s polling. Currently stalled and likely blocked by expensive render path.",
+        key: "/api/cart/current",
         type: "swr",
         status: "stalled",
         dur: null,
@@ -449,9 +449,9 @@ const PAGES = {
     effect: [
       {
         id: 12,
-        hookName: "useEffect (vendor attestations)",
-        desc: "Duplicate fetch for vendor attestations endpoint. Remove once useVendorAttestations stall is resolved.",
-        key: "/api/compliance/vendors/attestations",
+        hookName: "useEffect (cart)",
+        desc: "Duplicate fetch for cart endpoint. Remove once useCart stall is resolved.",
+        key: "/api/cart/current",
         type: "effect",
         status: "fresh",
         dur: 95,
@@ -469,25 +469,25 @@ const PAGES = {
 
 const COVERAGE = [
   {
-    route: "/compliance/audits/[auditId]",
+    route: "/products/[productId]",
     swr: 4,
     effect: 1,
     total: 5,
     pct: 80,
-    dups: ["/api/compliance/findings"],
-    inconsistent: ["/api/compliance/findings"],
+    dups: ["/api/reviews"],
+    inconsistent: ["/api/reviews"],
   },
   {
-    route: "/compliance/policies",
+    route: "/catalog",
     swr: 1,
     effect: 1,
     total: 2,
     pct: 50,
-    dups: ["/api/compliance/policies"],
+    dups: ["/api/products"],
     inconsistent: [],
   },
   {
-    route: "/compliance/incidents",
+    route: "/orders",
     swr: 1,
     effect: 3,
     total: 4,
@@ -496,12 +496,12 @@ const COVERAGE = [
     inconsistent: [],
   },
   {
-    route: "/compliance/vendors",
+    route: "/cart",
     swr: 1,
     effect: 1,
     total: 2,
     pct: 50,
-    dups: ["/api/compliance/vendors/attestations"],
+    dups: ["/api/cart/current"],
     inconsistent: [],
   },
   {
@@ -517,15 +517,15 @@ const COVERAGE = [
 
 const MISMATCHES = [
   {
-    endpoint: "/api/compliance/findings",
+    endpoint: "/api/reviews",
     sets: [
-      ["auditId", "controlId"],
-      ["audit", "controlId"],
+      ["productId", "page"],
+      ["product", "page"],
     ],
     count: 4,
     examples: [
-      "/api/compliance/findings?auditId=A-101&controlId=164.312(a)(2)",
-      "/api/compliance/findings?audit=A-101&controlId=164.312(a)(2)",
+      "/api/reviews?productId=P-301&page=1",
+      "/api/reviews?product=P-301&page=1",
     ],
   },
 ];
@@ -533,30 +533,30 @@ const MISMATCHES = [
 const WF = [
   {
     id: 1,
-    key: "useControlMatrix -> /api/compliance/controls/42",
-    route: "/compliance/audits/[auditId]",
+    key: "useProduct -> /api/products/P-301",
+    route: "/products/[productId]",
     origin: "swr",
     start: 0,
     dur: 89,
     status: "wf-success",
     http: 200,
-    conc: ["useAuditEvidence"],
+    conc: ["useInventory"],
   },
   {
     id: 2,
-    key: "useAuditEvidence -> /api/compliance/evidence/88",
-    route: "/compliance/audits/[auditId]",
+    key: "useInventory -> /api/inventory/P-301",
+    route: "/products/[productId]",
     origin: "swr",
     start: 20,
     dur: 203,
     status: "wf-success",
     http: 200,
-    conc: ["useControlMatrix"],
+    conc: ["useProduct"],
   },
   {
     id: 3,
-    key: "useComplianceFindings -> /api/compliance/findings?auditId=...",
-    route: "/compliance/audits/[auditId]",
+    key: "useReviews -> /api/reviews?productId=P-301",
+    route: "/products/[productId]",
     origin: "swr",
     start: 250,
     dur: null,
@@ -566,19 +566,19 @@ const WF = [
   },
   {
     id: 4,
-    key: "useEffect -> /api/compliance/findings?audit=...",
-    route: "/compliance/audits/[auditId]",
+    key: "useEffect -> /api/reviews?product=P-301",
+    route: "/products/[productId]",
     origin: "effect",
     start: 260,
     dur: 290,
     status: "wf-success",
     http: 200,
-    conc: ["useComplianceFindings"],
+    conc: ["useReviews"],
   },
   {
     id: 5,
-    key: "useIncidentQueue -> /api/compliance/incidents/7",
-    route: "/compliance/incidents",
+    key: "useOrders -> /api/orders/42",
+    route: "/orders",
     origin: "swr",
     start: 0,
     dur: 4021,
@@ -588,8 +588,8 @@ const WF = [
   },
   {
     id: 6,
-    key: "useVendorAttestations -> /api/compliance/vendors/attestations",
-    route: "/compliance/vendors",
+    key: "useCart -> /api/cart/current",
+    route: "/cart",
     origin: "swr",
     start: 500,
     dur: null,
@@ -604,9 +604,9 @@ const INIT_TL = [
     id: 1,
     time: "10:22:01.100",
     type: "param-mismatch",
-    route: "/compliance/audits/[auditId]",
-    hook: "useComplianceFindings",
-    key: "/api/compliance/findings",
+    route: "/products/[productId]",
+    hook: "useReviews",
+    key: "/api/reviews",
     dur: null,
     http: null,
     flag: "p",
@@ -615,9 +615,9 @@ const INIT_TL = [
     id: 2,
     time: "10:22:01.350",
     type: "error",
-    route: "/compliance/audits/[auditId]",
-    hook: "useComplianceFindings",
-    key: "/api/compliance/findings?auditId=A-101",
+    route: "/products/[productId]",
+    hook: "useReviews",
+    key: "/api/reviews?productId=P-301",
     dur: "—",
     http: 400,
     flag: "e",
@@ -626,9 +626,9 @@ const INIT_TL = [
     id: 3,
     time: "10:22:01.360",
     type: "external-fetch",
-    route: "/compliance/audits/[auditId]",
+    route: "/products/[productId]",
     hook: "useEffect",
-    key: "/api/compliance/findings?audit=A-101",
+    key: "/api/reviews?product=P-301",
     dur: null,
     http: null,
     flag: "",
@@ -637,9 +637,9 @@ const INIT_TL = [
     id: 4,
     time: "10:22:01.650",
     type: "duplicate-fetch",
-    route: "/compliance/audits/[auditId]",
+    route: "/products/[productId]",
     hook: "useEffect",
-    key: "/api/compliance/findings",
+    key: "/api/reviews",
     dur: null,
     http: null,
     flag: "d",
@@ -648,9 +648,9 @@ const INIT_TL = [
     id: 5,
     time: "10:22:01.655",
     type: "external-success",
-    route: "/compliance/audits/[auditId]",
+    route: "/products/[productId]",
     hook: "useEffect",
-    key: "/api/compliance/findings?audit=A-101",
+    key: "/api/reviews?product=P-301",
     dur: "290ms",
     http: 200,
     flag: "",
@@ -659,9 +659,9 @@ const INIT_TL = [
     id: 6,
     time: "10:22:03.400",
     type: "slow",
-    route: "/compliance/incidents",
-    hook: "useIncidentQueue",
-    key: "/api/compliance/incidents/7",
+    route: "/orders",
+    hook: "useOrders",
+    key: "/api/orders/42",
     dur: "4021ms",
     http: 500,
     flag: "e",
@@ -670,9 +670,9 @@ const INIT_TL = [
     id: 7,
     time: "10:22:08.100",
     type: "stalled",
-    route: "/compliance/vendors",
-    hook: "useVendorAttestations",
-    key: "/api/compliance/vendors/attestations",
+    route: "/cart",
+    hook: "useCart",
+    key: "/api/cart/current",
     dur: ">5000ms",
     http: null,
     flag: "e",
@@ -681,9 +681,9 @@ const INIT_TL = [
     id: 8,
     time: "10:22:09.000",
     type: "success",
-    route: "/compliance/audits/[auditId]",
-    hook: "useControlMatrix",
-    key: "/api/compliance/controls/42",
+    route: "/products/[productId]",
+    hook: "useProduct",
+    key: "/api/products/P-301",
     dur: "89ms",
     http: 200,
     flag: "",
@@ -784,7 +784,7 @@ function HookCard({ h }) {
 export default function HooksLens() {
   const [dark, setDark] = useState(false);
   const [nav, setNav] = useState("page");
-  const [page, setPage] = useState("/compliance/audits/[auditId]");
+  const [page, setPage] = useState("/products/[productId]");
   const [tl, setTl] = useState(INIT_TL);
   const [rf, setRf] = useState("all");
   const [search, setSearch] = useState("");
@@ -1002,8 +1002,8 @@ export default function HooksLens() {
           {paramCt > 0 && !dimP && (
             <div className="alert-strip purple">
               <strong>⊛ Param mismatch</strong> —{" "}
-              <code>/api/compliance/findings</code> uses <code>auditId</code> in
-              SWR but <code>audit</code> in useEffect. API returns 400 on the
+              <code>/api/reviews</code> uses <code>productId</code> in
+              SWR but <code>product</code> in useEffect. API returns 400 on the
               SWR call.
               <span className="alert-dismiss" onClick={() => setDimP(true)}>
                 ×
@@ -1013,7 +1013,7 @@ export default function HooksLens() {
           {dupCt > 0 && !dimD && (
             <div className="alert-strip orange">
               <strong>⧉ Duplicate</strong> —{" "}
-              <code>/api/compliance/findings</code> fired by both SWR and
+              <code>/api/reviews</code> fired by both SWR and
               useEffect on <code>{page}</code>. Remove one.
               <span className="alert-dismiss" onClick={() => setDimD(true)}>
                 ×
@@ -1022,8 +1022,8 @@ export default function HooksLens() {
           )}
           {stallCt > 0 && (
             <div className="alert-strip red">
-              <strong>⚠ Stalled</strong> — <code>useVendorAttestations</code>{" "}
-              in-flight &gt;5s on <code>/compliance/vendors</code>. Heavy render
+              <strong>⚠ Stalled</strong> — <code>useCart</code>{" "}
+              in-flight &gt;5s on <code>/cart</code>. Heavy render
               or blocked upstream promise.
             </div>
           )}

@@ -1,0 +1,96 @@
+name: Bug Report
+description: Report a bug or unexpected behavior
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report a bug! Please fill out the form below.
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Bug Description
+      description: A clear and concise description of what the bug is.
+      placeholder: Tell us what you see!
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to Reproduce
+      description: Steps to reproduce the behavior
+      placeholder: |
+        1. Configure SWR with '...'
+        2. Open /hookslens route
+        3. Trigger a fetch with '...'
+        4. See error
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected Behavior
+      description: What did you expect to happen?
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual Behavior
+      description: What actually happened?
+    validations:
+      required: true
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Which area is affected?
+      multiple: true
+      options:
+        - Panel UI
+        - SWR Middleware
+        - Fetch Observer
+        - Timeline/Events
+        - Hook Registration
+        - Build/Package
+        - Documentation
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: Please provide your environment details
+      value: |
+        - HooksLens version:
+        - Next.js version:
+        - SWR version:
+        - Node version:
+        - Browser:
+        - OS:
+    validations:
+      required: true
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional Context
+      description: Add any other context, screenshots, or code snippets about the problem here.
+
+  - type: checkboxes
+    id: terms
+    attributes:
+      label: Code of Conduct
+      description: By submitting this issue, you agree to follow our [Contributing Guidelines](https://github.com/riordanalfredo/hookslens/blob/main/CONTRIBUTING.md)
+      options:
+        - label: I have checked the existing issues to avoid duplicates
+          required: true
+        - label: I am using HooksLens in development mode (not production)
+          required: false

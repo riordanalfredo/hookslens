@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 📚 Documentation
+    url: https://github.com/riordanalfredo/hookslens#readme
+    about: Check the README and documentation first
+  - name: 💬 Discussions
+    url: https://github.com/riordanalfredo/hookslens/discussions
+    about: Ask questions and discuss ideas with the community
+  - name: 🔒 Security Issue
+    url: https://github.com/riordanalfredo/hookslens/security/advisories/new
+    about: Report a security vulnerability privately

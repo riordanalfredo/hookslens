@@ -198,51 +198,51 @@ Without it, the hook still appears via its SWR key — you just lose the human n
 **Before:**
 
 ```ts
-// src/hooks/useComplianceFindings.ts
-export function useComplianceFindings(auditId: string, controlId: string) {
-  return useSWR(["/api/compliance/findings", { auditId, controlId }], fetcher);
+// src/hooks/useProductReviews.ts
+export function useProductReviews(productId: string, page: number) {
+  return useSWR(["/api/reviews", { productId, page }], fetcher);
 }
 ```
 
 **After:**
 
 ```ts
-// src/hooks/useComplianceFindings.ts
+// src/hooks/useProductReviews.ts
 import { useHooksLens } from "hookslens";
 
-export function useComplianceFindings(auditId: string, controlId: string) {
+export function useProductReviews(productId: string, page: number) {
   // dev-only, no-op in production
   useHooksLens({
-    name: "useComplianceFindings",
+    name: "useProductReviews",
     description:
-      "Fetches compliance findings. Expects auditId and controlId params.",
-    fetchKey: `/api/compliance/findings?auditId=${auditId}&controlId=${controlId}`,
+      "Fetches paginated product reviews. Expects productId and page params.",
+    fetchKey: `/api/reviews?productId=${productId}&page=${page}`,
   });
 
-  return useSWR(["/api/compliance/findings", { auditId, controlId }], fetcher);
+  return useSWR(["/api/reviews", { productId, page }], fetcher);
 }
 ```
 
 **For legacy useEffect hooks** (migration candidates):
 
 ```ts
-// src/hooks/useLoadRemediationPlan.ts
+// src/hooks/useCart.ts
 import { useHooksLens } from "hookslens";
 
-export function useLoadRemediationPlan(planId: string) {
+export function useCart(userId: string) {
   useHooksLens({
-    name: "useLoadRemediationPlan",
+    name: "useCart",
     description: "Legacy useEffect fetch — pending SWR migration.",
-    fetchKey: `/api/compliance/remediation-plans/${planId}`,
+    fetchKey: `/api/cart/${userId}`,
     custom: true,
   });
 
   const [data, setData] = useState(null);
   useEffect(() => {
-    fetch(`/api/compliance/remediation-plans/${planId}`)
+    fetch(`/api/cart/${userId}`)
       .then((r) => r.json())
       .then(setData);
-  }, [planId]);
+  }, [userId]);
 
   return data;
 }
@@ -287,7 +287,7 @@ const toggleTheme = () => {
 | Stalled hook (>5s in-flight)                | `setTimeout` in `recordFetchStart`                 |
 | 4xx response                                | HTTP status extracted from error shape             |
 | Duplicate fetch (SWR + useEffect, same URL) | `checkDuplicateFetch` cross-references URL maps    |
-| Param mismatch (`auditId` vs `audit`)       | `detectParamMismatch` compares query key sets      |
+| Param mismatch (`productId` vs `product`)   | `detectParamMismatch` compares query key sets      |
 | Per-page hook scoping                       | `usePathname()` captured at middleware render time |
 | Multi-tab panel updates                     | `BroadcastChannel` + shared `hooksLensStore`       |
 
