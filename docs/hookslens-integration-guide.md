@@ -1,7 +1,16 @@
 # hookslens — Integration Guide
 
-Everything you need to add or change to wire hookslens into your existing
-Next.js App Router project. Zero changes to your business logic required.
+Monitor all HTTP requests in your Next.js app with real-time visibility into fetch calls, performance, and duplicate requests.
+
+**Core Features:**
+
+- **Fetch Monitoring**: Track all `fetch()` calls, `useEffect` fetches, and API requests
+- **Performance Tracking**: Detect slow requests, stalled fetches, and HTTP errors
+- **Duplicate Detection**: Find redundant API calls across your app
+- **Timeline View**: Visualize request waterfalls and concurrency
+- **SWR Enhancement** (optional): Additional insights for SWR hooks (polling, deduplication, cache status)
+
+Zero changes to your business logic required. Development-only tool.
 
 ---
 
@@ -27,15 +36,58 @@ hookslens/
 
 ---
 
-## Option A — Install from npm (recommended)
+## Quick Start Options
 
-Install in your app:
+### Option A: Fetch Monitoring Only (No SWR Required)
+
+Install and track all fetch calls in your Next.js app:
+
+```bash
+npm i hookslens
+```
+
+Wire the fetch observer:
+
+```tsx
+"use client";
+import { useEffect, ReactNode } from "react";
+import { installFetchObserver } from "hookslens";
+
+interface ProvidersProps {
+  children: ReactNode;
+}
+
+export const Providers = ({ children }: ProvidersProps) => {
+  useEffect(() => {
+    if (
+      typeof window !== "undefined" &&
+      process.env.NODE_ENV === "development"
+    ) {
+      installFetchObserver();
+    }
+  }, []);
+
+  return <>{children}</>;
+};
+```
+
+This gives you:
+
+- All `fetch()` calls tracked in the timeline
+- Performance metrics (slow requests, errors)
+- Duplicate fetch detection
+- Waterfall visualization
+- HTTP status monitoring
+
+### Option B: Full SWR Integration (Recommended for SWR users)
+
+Install with SWR for enhanced hook tracking:
 
 ```bash
 npm i hookslens swr
 ```
 
-Wire runtime instrumentation:
+Wire both fetch observer and SWR middleware:
 
 ```tsx
 "use client";
@@ -89,11 +141,20 @@ export default function Page() {
 }
 ```
 
-Then navigate to `http://localhost:3000/hookslens`.
+This adds SWR-specific features:
+
+- Everything from Option A, plus:
+- Hook names and descriptions
+- Cache status (fresh/stale/error)
+- Polling interval detection
+- SWR deduplication tracking
+- Mutation monitoring
+
+Then navigate to `http://localhost:3000/hookslens` in your browser.
 
 ---
 
-## Option B — Local repository copy template (fallback)
+## Option C — Local repository copy (alternative)
 
 Recommended (copy-ready bundle):
 
@@ -117,9 +178,54 @@ Use this fallback only if you prefer copying files over importing
 
 ---
 
+## What You Get With and Without SWR
+
+| Feature                    | Without SWR    | With SWR     |
+| -------------------------- | -------------- | ------------ |
+| Track all `fetch()` calls  | ✅             | ✅           |
+| Timeline view              | ✅             | ✅           |
+| Slow request detection     | ✅             | ✅           |
+| HTTP error tracking        | ✅             | ✅           |
+| Duplicate fetch detection  | ✅             | ✅           |
+| Waterfall visualization    | ✅             | ✅           |
+| Per-route filtering        | ✅             | ✅           |
+| Hook names                 | ⚠️ Manual only | ✅ Automatic |
+| Cache status (fresh/stale) | ❌             | ✅           |
+| Polling detection          | ❌             | ✅           |
+| SWR deduplication tracking | ❌             | ✅           |
+| Mutation monitoring        | ❌             | ✅           |
+
+**Bottom line:** HooksLens works great for general fetch monitoring without SWR. Adding SWR gives you deeper hook-level insights.
+
+---
+
 ## Changes to your existing files
 
-### 1. `src/app/providers.tsx` (or wherever your SWRConfig lives)
+### 1. Add the Fetch Observer
+
+**For non-SWR apps** (or any Next.js app with `fetch` calls):
+
+```tsx
+// src/app/providers.tsx
+"use client";
+import { useEffect } from "react";
+import { installFetchObserver } from "hookslens";
+
+export function Providers({ children }: { children: React.ReactNode }) {
+  useEffect(() => {
+    if (
+      typeof window !== "undefined" &&
+      process.env.NODE_ENV === "development"
+    ) {
+      installFetchObserver();
+    }
+  }, []);
+
+  return <>{children}</>;
+}
+```
+
+**For SWR apps**:
 
 This is the **only required change** to your business code.
 
@@ -169,19 +275,7 @@ export const SWRProvider = ({ children }: SWRProviderProps) => {
   const swrUse =
     process.env.NODE_ENV === "development" ? [hooksLensMiddleware] : [];
 
-  return (
-    <SWRConfig
-      value={{
-        dedupingInterval: 2000,
-        revalidateOnFocus: false,
-        revalidateOnReconnect: false,
-        keepPreviousData: true,
-        use: swrUse,
-      }}
-    >
-      {children}
-    </SWRConfig>
-  );
+  return <SWRConfig value={{ use: swrUse }}>{children}</SWRConfig>;
 };
 ```
 
@@ -276,20 +370,32 @@ const toggleTheme = () => {
 
 ---
 
-## What hookslens catches automatically (no extra code)
+## What hookslens catches automatically
 
-| Scenario                                    | How detected                                       |
-| ------------------------------------------- | -------------------------------------------------- |
-| `useSWR` hook registered on a page          | `hooksLensMiddleware` via `SWRConfig.use`          |
-| `useSWRMutation` triggered                  | Same middleware, `isMutation` flag                 |
-| `useEffect + fetch` call                    | `installFetchObserver` wraps `window.fetch`        |
-| Slow fetch (>1000ms)                        | Duration tracked in `recordFetchSuccess`           |
-| Stalled hook (>5s in-flight)                | `setTimeout` in `recordFetchStart`                 |
-| 4xx response                                | HTTP status extracted from error shape             |
-| Duplicate fetch (SWR + useEffect, same URL) | `checkDuplicateFetch` cross-references URL maps    |
-| Param mismatch (`productId` vs `product`)   | `detectParamMismatch` compares query key sets      |
-| Per-page hook scoping                       | `usePathname()` captured at middleware render time |
-| Multi-tab panel updates                     | `BroadcastChannel` + shared `hooksLensStore`       |
+### Core Fetch Monitoring (Works without SWR)
+
+| Scenario                     | How detected                                | Requires SWR? |
+| ---------------------------- | ------------------------------------------- | ------------- |
+| Any `fetch()` call           | `installFetchObserver` wraps `window.fetch` | ❌ No         |
+| Slow fetch (>1000ms)         | Duration tracked on every request           | ❌ No         |
+| Stalled request (>5s)        | Timeout detection on in-flight requests     | ❌ No         |
+| HTTP errors (4xx, 5xx)       | Status code extracted from response         | ❌ No         |
+| Duplicate fetches (same URL) | Cross-reference URL tracking                | ❌ No         |
+| Network failures             | Catch block on fetch wrapper                | ❌ No         |
+| Request waterfall            | Timestamp tracking for all fetches          | ❌ No         |
+| Multi-tab panel sync         | `BroadcastChannel` for cross-tab updates    | ❌ No         |
+
+### SWR-Enhanced Features (Requires SWR)
+
+| Scenario                                  | How detected                                       | Requires SWR? |
+| ----------------------------------------- | -------------------------------------------------- | ------------- |
+| `useSWR` hook registered                  | `hooksLensMiddleware` via `SWRConfig.use`          | ✅ Yes        |
+| `useSWRMutation` triggered                | Same middleware, `isMutation` flag                 | ✅ Yes        |
+| Cache status (fresh/stale/error)          | SWR middleware state                               | ✅ Yes        |
+| Polling intervals                         | SWR config `refreshInterval` tracking              | ✅ Yes        |
+| Param mismatch (`productId` vs `product`) | Compare query keys across SWR and raw fetch        | ✅ Yes        |
+| Per-page hook scoping                     | `usePathname()` captured at middleware render time | ✅ Yes        |
+| SWR deduplication                         | Middleware intercepts duplicate SWR calls          | ✅ Yes        |
 
 ---
 

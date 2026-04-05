@@ -2,14 +2,14 @@
 
 # 🔍 HooksLens
 
-**Developer DevTools for SWR and fetch behavior in Next.js apps**
+**Monitor fetch requests AND hook intent in Next.js apps — catch mismatches other tools miss**
 
 [![GitHub Repo](https://img.shields.io/badge/repo-riordanalfredo%2Fhookslens-181717?logo=github)](https://github.com/riordanalfredo/hookslens)
 [![NPM Version](https://img.shields.io/npm/v/hookslens?logo=npm)](https://www.npmjs.com/package/hookslens)
 [![License](https://img.shields.io/github/license/riordanalfredo/hookslens)](./LICENSE)
 [![Demo](https://img.shields.io/badge/demo-live-success?logo=vercel)](https://riordanalfredo.github.io/hookslens/)
 
-[Demo](https://riordanalfredo.github.io/hookslens/) • [Installation](#installation) • [Documentation](#quick-start) • [Contributing](CONTRIBUTING.md)
+[Demo](https://riordanalfredo.github.io/hookslens/) • [Installation](#installation) • [Documentation](#quick-start) • [Case Studies](docs/case-studies.md) • [Contributing](CONTRIBUTING.md)
 
 </div>
 
@@ -19,20 +19,39 @@
 
 ![HooksLens Dashboard Demo](./hookslens-demo.gif)
 
-_Real-time monitoring of fetch operations and SWR hooks_
+_Track what hooks you registered AND what fetches actually fired — see the full picture_
 
 </div>
 
-## ✨ Features
+## 💡 Why HooksLens?
 
-HooksLens provides real-time insights into your SWR hooks and fetch operations. Open `/hookslens` in development to access:
+**Other tools show you network requests. HooksLens shows you the story behind them.**
 
-- 🎯 **Active Hook Monitoring** – Track hook keys and instance counts
-- 🛣️ **Route-Level Filtering** – Focus on specific routes in your app
-- ⏱️ **Polling Detection** – Identify hooks with polling intervals
-- 🚀 **In-Flight Tracking** – Monitor active requests
-- 📊 **Timeline Events** – Visualize fetch sequences with flagged duplicates/mismatches
-- 🔗 **Connection Status** – Real-time diagnostics and health badges
+Chrome DevTools shows _what_ fetched. HooksLens shows _what hook registered_, _what it expected_, and _what actually happened_ — then flags the mismatches.
+
+### The Problem HooksLens Solves
+
+You refactor a hook to use `productId` instead of `product`. Your API returns 400. Chrome DevTools shows the failed request. **HooksLens shows you registered `useProduct` expecting `productId`, but the fetch sent `product`** — instant root cause.
+
+Open `/hookslens` in development to access:
+
+### Core Monitoring (Works Standalone)
+
+- **Fetch Tracking** – Monitor all HTTP requests, `useEffect` fetches, and API calls
+- **Performance Detection** – Automatically flag slow (>1s) and stalled (>5s) requests
+- **Duplicate Detection** – Find redundant API calls across your app
+- **Error Monitoring** – Track 4xx/5xx responses and network failures
+- **Timeline View** – Visualize request waterfalls and concurrency
+- **Route Filtering** – Focus on specific Next.js routes
+
+### Hook Intent Tracking (With SWR)
+
+- **Hook Registry** – See which hooks registered (names, descriptions, expected parameters)
+- **Intent vs Reality** – Compare what hooks expected vs what actually fetched
+- **Mismatch Detection** – Auto-flag parameter mismatches (`productId` vs `product`)
+- **Polling Detection** – Identify hooks with `refreshInterval` configured
+- **Cache Status** – Monitor fresh/stale/error states per hook
+- **Mutation Tracking** – Monitor `useSWRMutation` calls
 
 ---
 
@@ -123,26 +142,75 @@ Then open the printed local URL (default: `http://127.0.0.1:5173/` or `http://lo
 
 ## 📦 Installation
 
-Install HooksLens in your Next.js app:
-
 ```bash
 npm i hookslens --save-dev
 ```
 
 **What's included:**
 
-- `hookslens` – Runtime hooks and instrumentation
+- `installFetchObserver()` – Tracks all `fetch()` calls (works standalone)
+- `hooksLensMiddleware` – SWR middleware (optional, for SWR users)
 - `hookslens/panel` – Dashboard component for Next.js App Router
 
 ---
 
 ## 🔧 Quick Start
 
-### Step 1: Configure SWR Provider
+Choose the setup that matches your stack:
 
-In your SWR provider, wire middleware + fetch observer:
+### Option A: Fetch Monitoring Only (No SWR)
+
+Perfect for Next.js apps using `fetch`, `useEffect`, or any HTTP library.
+
+**Step 1:** Install the fetch observer
 
 ```tsx
+// src/app/providers.tsx
+"use client";
+
+import { useEffect } from "react";
+import { installFetchObserver } from "hookslens";
+
+export function Providers({ children }: { children: React.ReactNode }) {
+  useEffect(() => {
+    if (
+      typeof window !== "undefined" &&
+      process.env.NODE_ENV === "development"
+    ) {
+      installFetchObserver();
+    }
+  }, []);
+
+  return <>{children}</>;
+}
+```
+
+**Step 2:** Add the dashboard route
+
+```tsx
+// src/app/hookslens/page.tsx
+"use client";
+
+import HooksLensPanel from "hookslens/panel";
+
+export default function Page() {
+  if (process.env.NODE_ENV !== "development") return null;
+  return <HooksLensPanel />;
+}
+```
+
+Done! Navigate to `/hookslens` to see all your fetch calls.
+
+---
+
+### Option B: Full SWR Integration
+
+Includes everything from Option A plus SWR-specific features.
+
+**Step 1:** Wire both fetch observer and SWR middleware
+
+```tsx
+// src/app/providers.tsx
 "use client";
 
 import { useEffect, ReactNode } from "react";
@@ -170,16 +238,89 @@ export const SWRProvider = ({ children }: SWRProviderProps) => {
 };
 ```
 
-**Optional:** Register custom hooks for enhanced tracking:
+**Optional:** Label custom hooks for better tracking:
 
 ```ts
 import { useHooksLens } from "hookslens";
 
-useHooksLens({
-  name: "useProductReviews",
-  description: "Fetches reviews by productId",
-  fetchKey: `/api/reviews?productId=${productId}`,
-});
+export function useProductReviews(productId: string) {
+  useHooksLens({
+    name: "useProductReviews",
+    description: "Fetches paginated product reviews",
+    fetchKey: `/api/reviews?productId=${productId}`,
+  });
+
+  return useSWR(["/api/reviews", { productId }], fetcher);
+}
+```
+
+**Step 2:** Add the dashboard route
+
+```tsx
+// src/app/hookslens/page.tsx
+"use client";
+
+import HooksLensPanel from "hookslens/panel";
+
+export default function Page() {
+  if (process.env.NODE_ENV !== "development") return null;
+  return <HooksLensPanel />;
+}
+```
+
+Done! Navigate to `/hookslens` to see all your fetch calls.
+
+---
+
+### Option B: Full SWR Integration
+
+Includes everything from Option A plus SWR-specific features.
+
+**Step 1:** Wire both fetch observer and SWR middleware
+
+```tsx
+// src/app/providers.tsx
+"use client";
+
+import { useEffect, ReactNode } from "react";
+import { SWRConfig } from "swr";
+import { installFetchObserver, hooksLensMiddleware } from "hookslens";
+
+interface SWRProviderProps {
+  children: ReactNode;
+}
+
+export const SWRProvider = ({ children }: SWRProviderProps) => {
+  useEffect(() => {
+    if (
+      typeof window !== "undefined" &&
+      process.env.NODE_ENV === "development"
+    ) {
+      installFetchObserver();
+    }
+  }, []);
+
+  const swrUse =
+    process.env.NODE_ENV === "development" ? [hooksLensMiddleware] : [];
+
+  return <SWRConfig value={{ use: swrUse }}>{children}</SWRConfig>;
+};
+```
+
+**Optional:** Label custom hooks for better tracking:
+
+```ts
+import { useHooksLens } from "hookslens";
+
+export function useProductReviews(productId: string) {
+  useHooksLens({
+    name: "useProductReviews",
+    description: "Fetches paginated product reviews",
+    fetchKey: `/api/reviews?productId=${productId}`,
+  });
+
+  return useSWR(["/api/reviews", { productId }], fetcher);
+}
 ```
 
 ### Step 2: Add Dashboard Route
@@ -257,21 +398,21 @@ npm run test:ui       # Interactive UI
 
 ## 🔗 Related Tools & Research
 
-HooksLens builds upon the React and network debugging ecosystem with a focus on SWR + Next.js hook-flow visibility.
+HooksLens builds upon the React and network debugging ecosystem with real-time fetch monitoring for Next.js apps.
 
 **Complementary tools:**
 | Tool | Focus | Link |
 |------|-------|------|
 | **React DevTools** | Component & hooks inspection | [docs](https://react.dev/learn/react-developer-tools) |
+| **Chrome DevTools** | Network request debugging | [docs](https://developer.chrome.com/docs/devtools/network) |
 | **SWR** | Cache & revalidation | [docs](https://swr.vercel.app/docs/getting-started) |
 | **SWR Middleware** | Extension point (used by HooksLens) | [docs](https://swr.vercel.app/docs/middleware) |
-| **Chrome DevTools** | Network request debugging | [docs](https://developer.chrome.com/docs/devtools/network) |
 | **OpenTelemetry JS** | Observability patterns | [docs](https://opentelemetry.io/docs/languages/js/) |
 
 **What makes HooksLens unique:**
 
-- 🎯 Shows hook registration **intent**, not just request outcomes
-- 📊 Dedicated SWR-centric panel for cross-hook fetch flow analysis
+- 🔍 Monitors **all** fetch calls, not just network panel snapshots
+- 🎯 Shows hook registration **intent** alongside request outcomes (with SWR)
 - 🛣️ Route-level debugging context for Next.js apps
 - ⏱️ Timeline visualization with duplicate/mismatch detection
 
@@ -292,7 +433,7 @@ HooksLens builds upon the React and network debugging ecosystem with a focus on 
 HooksLens may not be the right tool if you need:
 
 - ❌ Production-grade distributed tracing across backend services
-- ❌ Support for non-Next.js apps without SWR
+- ❌ Support for non-Next.js frameworks (designed for Next.js App Router)
 - ❌ Rendering performance profiling (use React Profiler instead)
 - ❌ Zero runtime instrumentation in development
 - ❌ Debugging server actions, server components, or non-fetch transports (e.g., GraphQL over custom clients)
