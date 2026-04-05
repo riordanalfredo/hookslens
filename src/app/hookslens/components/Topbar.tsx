@@ -1,19 +1,29 @@
 import type { PanelStats, ThemeMode } from "../types";
+import type { ChangeEvent } from "react";
 
 interface TopbarProps {
   connected: boolean;
   theme: ThemeMode;
   onToggleTheme: () => void;
-  stats: PanelStats;
-  showDiagnostics?: boolean;
+  search: string;
+  onSearchChange: (value: string) => void;
+  paused: boolean;
+  onTogglePause: () => void;
+  onClearLog: () => void;
+  routeFilter: string;
+  onRouteFilterChange: (route: string) => void;
 }
 
 export const Topbar = ({
   connected,
   theme,
   onToggleTheme,
-  stats,
-  showDiagnostics = true,
+  search,
+  onSearchChange,
+  paused,
+  onTogglePause,
+  onClearLog,
+  routeFilter,
 }: TopbarProps) => {
   return (
     <div className="topbar">
@@ -38,20 +48,26 @@ export const Topbar = ({
       </div>
 
       <div className="topbar-right">
-        {showDiagnostics && stats.mismatchCount > 0 && (
-          <span className="pill orange">⊛ {stats.mismatchCount} mismatch</span>
-        )}
-        {showDiagnostics && stats.duplicateCount > 0 && (
-          <span className="pill orange">
-            ⧉ {stats.duplicateCount} duplicate
-          </span>
-        )}
-        {showDiagnostics && stats.stalledCount > 0 && (
-          <span className="pill red">{stats.stalledCount} stalled</span>
-        )}
-        {showDiagnostics && stats.badRequestCount > 0 && (
-          <span className="pill red">4xx hooks {stats.badRequestCount}</span>
-        )}
+        <div className="toolbar">
+          <div className="toolbar-row">
+            {routeFilter !== "current" && (
+              <input
+                className="search-input"
+                placeholder="filter by hook or key…"
+                value={search}
+                onChange={(e: ChangeEvent<HTMLInputElement>) =>
+                  onSearchChange(e.target.value)
+                }
+              />
+            )}
+            <button className="btn" onClick={onTogglePause}>
+              {paused ? "resume" : "pause"}
+            </button>
+            <button className="btn" onClick={onClearLog}>
+              clear log
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   );

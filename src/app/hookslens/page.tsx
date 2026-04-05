@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, type ChangeEvent } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
+import { AggregatedAlertsStrips } from "./components/AggregatedAlertsStrips";
 import { AlertStrips } from "./components/AlertStrips";
 import { AllHooksView } from "./components/AllHooksView";
 import { CoverageView } from "./components/CoverageView";
@@ -154,8 +155,13 @@ const HooksLensPane = () => {
           connected={connected}
           theme={theme}
           onToggleTheme={toggleTheme}
-          stats={stats}
-          showDiagnostics={activeView === "current"}
+          search={search}
+          onSearchChange={setSearch}
+          paused={paused}
+          onTogglePause={() => setPaused((p) => !p)}
+          onClearLog={clearTimeline}
+          routeFilter={routeFilter}
+          onRouteFilterChange={setRouteFilter}
         />
 
         <Sidebar
@@ -183,93 +189,16 @@ const HooksLensPane = () => {
           )}
 
           {activeView === "all-hooks" && (
-            <div className="alert-stack">
-              {stats.mismatchCount > 0 && !hiddenAllHooksAlerts.param && (
-                <div className="alert-strip purple">
-                  <strong>⊛ Param mismatch</strong>
-                  <span>
-                    {stats.mismatchCount} mismatched call
-                    {stats.mismatchCount === 1 ? "" : "s"} detected.
-                  </span>
-                  <button
-                    className="alert-dismiss"
-                    onClick={() =>
-                      setHiddenAllHooksAlerts((current) => ({
-                        ...current,
-                        param: true,
-                      }))
-                    }
-                  >
-                    ×
-                  </button>
-                </div>
-              )}
-
-              {stats.duplicateCount > 0 && !hiddenAllHooksAlerts.duplicate && (
-                <div className="alert-strip orange">
-                  <strong>⧉ Duplicate</strong>
-                  <span>
-                    {stats.duplicateCount} duplicate fetch event
-                    {stats.duplicateCount === 1 ? "" : "s"} detected.
-                  </span>
-                  <button
-                    className="alert-dismiss"
-                    onClick={() =>
-                      setHiddenAllHooksAlerts((current) => ({
-                        ...current,
-                        duplicate: true,
-                      }))
-                    }
-                  >
-                    ×
-                  </button>
-                </div>
-              )}
-
-              {stats.stalledCount > 0 && !hiddenAllHooksAlerts.stalled && (
-                <div className="alert-strip red">
-                  <strong>⚠ Stalled</strong>
-                  <span>
-                    {stats.stalledCount} stalled hook
-                    {stats.stalledCount === 1 ? "" : "s"} found.
-                  </span>
-                  <button
-                    className="alert-dismiss"
-                    onClick={() =>
-                      setHiddenAllHooksAlerts((current) => ({
-                        ...current,
-                        stalled: true,
-                      }))
-                    }
-                  >
-                    ×
-                  </button>
-                </div>
-              )}
-
-              {stats.badRequestCount > 0 &&
-                !hiddenAllHooksAlerts.badRequest && (
-                  <div className="alert-strip red">
-                    <strong>4xx</strong>
-                    <span>
-                      {stats.badRequestCount} hook
-                      {stats.badRequestCount === 1 ? "" : "s"} with bad request
-                      responses.
-                    </span>
-                    <button
-                      className="alert-dismiss"
-                      onClick={() =>
-                        setHiddenAllHooksAlerts((current) => ({
-                          ...current,
-                          badRequest: true,
-                        }))
-                      }
-                    >
-                      ×
-                    </button>
-                  </div>
-                )}
-            </div>
+            <AggregatedAlertsStrips
+              stats={stats}
+              hidden={hiddenAllHooksAlerts}
+              onDismiss={(kind) =>
+                setHiddenAllHooksAlerts((current) => ({
+                  ...current,
+                  [kind]: true,
+                }))
+              }
+            />
           )}
 
           <div className="main-header">
@@ -286,25 +215,7 @@ const HooksLensPane = () => {
             </div>
 
             <div className="toolbar">
-              <div className="toolbar-row">
-                <input
-                  className="search-input"
-                  placeholder="filter by hook or key…"
-                  value={search}
-                  onChange={(e: ChangeEvent<HTMLInputElement>) =>
-                    setSearch(e.target.value)
-                  }
-                />
-
-                <button className="btn" onClick={() => setPaused((p) => !p)}>
-                  {paused ? "resume" : "pause"}
-                </button>
-                <button className="btn" onClick={clearTimeline}>
-                  clear log
-                </button>
-              </div>
-
-              {routes.length > 0 && (
+              {activeView !== "current" && routes.length > 0 && (
                 <div className="route-filter">
                   <span className="route-filter-label">page:</span>
                   <button
@@ -322,6 +233,30 @@ const HooksLensPane = () => {
                       {route}
                     </button>
                   ))}
+                </div>
+              )}
+              {activeView === "current" && (
+                <div className="toolbar-row">
+                  {stats.mismatchCount > 0 && (
+                    <span className="pill orange">
+                      ⊛ {stats.mismatchCount} mismatch
+                    </span>
+                  )}
+                  {stats.duplicateCount > 0 && (
+                    <span className="pill orange">
+                      ⧉ {stats.duplicateCount} duplicate
+                    </span>
+                  )}
+                  {stats.stalledCount > 0 && (
+                    <span className="pill red">
+                      {stats.stalledCount} stalled
+                    </span>
+                  )}
+                  {stats.badRequestCount > 0 && (
+                    <span className="pill red">
+                      4xx hooks {stats.badRequestCount}
+                    </span>
+                  )}
                 </div>
               )}
             </div>
