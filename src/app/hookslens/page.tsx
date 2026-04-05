@@ -29,6 +29,12 @@ const HooksLensPane = () => {
     duplicate: false,
     stalled: false,
   });
+  const [hiddenAllHooksAlerts, setHiddenAllHooksAlerts] = useState({
+    param: false,
+    duplicate: false,
+    stalled: false,
+    badRequest: false,
+  });
   const didInitRouteRef = useRef(false);
   const { snapshot, connected, setSnapshot } = useInsightSnapshot(paused);
   const { theme, toggleTheme } = useThemeMode();
@@ -149,6 +155,7 @@ const HooksLensPane = () => {
           theme={theme}
           onToggleTheme={toggleTheme}
           stats={stats}
+          showDiagnostics={activeView === "current"}
         />
 
         <Sidebar
@@ -165,13 +172,105 @@ const HooksLensPane = () => {
         />
 
         <div className="main">
-          <AlertStrips
-            diagnostics={snapshot.diagnostics}
-            hidden={hiddenAlerts}
-            onDismiss={(kind) =>
-              setHiddenAlerts((current) => ({ ...current, [kind]: true }))
-            }
-          />
+          {activeView === "current" && (
+            <AlertStrips
+              diagnostics={snapshot.diagnostics}
+              hidden={hiddenAlerts}
+              onDismiss={(kind) =>
+                setHiddenAlerts((current) => ({ ...current, [kind]: true }))
+              }
+            />
+          )}
+
+          {activeView === "all-hooks" && (
+            <div className="alert-stack">
+              {stats.mismatchCount > 0 && !hiddenAllHooksAlerts.param && (
+                <div className="alert-strip purple">
+                  <strong>⊛ Param mismatch</strong>
+                  <span>
+                    {stats.mismatchCount} mismatched call
+                    {stats.mismatchCount === 1 ? "" : "s"} detected.
+                  </span>
+                  <button
+                    className="alert-dismiss"
+                    onClick={() =>
+                      setHiddenAllHooksAlerts((current) => ({
+                        ...current,
+                        param: true,
+                      }))
+                    }
+                  >
+                    ×
+                  </button>
+                </div>
+              )}
+
+              {stats.duplicateCount > 0 && !hiddenAllHooksAlerts.duplicate && (
+                <div className="alert-strip orange">
+                  <strong>⧉ Duplicate</strong>
+                  <span>
+                    {stats.duplicateCount} duplicate fetch event
+                    {stats.duplicateCount === 1 ? "" : "s"} detected.
+                  </span>
+                  <button
+                    className="alert-dismiss"
+                    onClick={() =>
+                      setHiddenAllHooksAlerts((current) => ({
+                        ...current,
+                        duplicate: true,
+                      }))
+                    }
+                  >
+                    ×
+                  </button>
+                </div>
+              )}
+
+              {stats.stalledCount > 0 && !hiddenAllHooksAlerts.stalled && (
+                <div className="alert-strip red">
+                  <strong>⚠ Stalled</strong>
+                  <span>
+                    {stats.stalledCount} stalled hook
+                    {stats.stalledCount === 1 ? "" : "s"} found.
+                  </span>
+                  <button
+                    className="alert-dismiss"
+                    onClick={() =>
+                      setHiddenAllHooksAlerts((current) => ({
+                        ...current,
+                        stalled: true,
+                      }))
+                    }
+                  >
+                    ×
+                  </button>
+                </div>
+              )}
+
+              {stats.badRequestCount > 0 &&
+                !hiddenAllHooksAlerts.badRequest && (
+                  <div className="alert-strip red">
+                    <strong>4xx</strong>
+                    <span>
+                      {stats.badRequestCount} hook
+                      {stats.badRequestCount === 1 ? "" : "s"} with bad request
+                      responses.
+                    </span>
+                    <button
+                      className="alert-dismiss"
+                      onClick={() =>
+                        setHiddenAllHooksAlerts((current) => ({
+                          ...current,
+                          badRequest: true,
+                        }))
+                      }
+                    >
+                      ×
+                    </button>
+                  </div>
+                )}
+            </div>
+          )}
 
           <div className="main-header">
             <div>

@@ -24,6 +24,9 @@ const VIEW_ITEMS: Array<{ id: ViewMode; icon: string; label: string }> = [
   { id: "polling", icon: "⟳", label: "Polling" },
 ];
 
+const CURRENT_PAGE_VIEW = VIEW_ITEMS.find((item) => item.id === "current");
+const TRACKER_VIEWS = VIEW_ITEMS.filter((item) => item.id !== "current");
+
 export const Sidebar = ({
   hooks,
   routes,
@@ -74,7 +77,7 @@ export const Sidebar = ({
       <section className="sidebar-section sidebar-scroll">
         <div className="sidebar-label">Views</div>
         <div>
-          {VIEW_ITEMS.map((item) => (
+          {TRACKER_VIEWS.map((item) => (
             <div
               key={item.id}
               className={`view-item ${activeView === item.id ? "active" : ""}`}
@@ -96,11 +99,26 @@ export const Sidebar = ({
         </div>
 
         <div className="sidebar-label" style={{ marginTop: 12 }}>
-          Pages
+          Current Page
+        </div>
+        <div>
+          {CURRENT_PAGE_VIEW && (
+            <div
+              className={`view-item ${activeView === CURRENT_PAGE_VIEW.id ? "active" : ""}`}
+              onClick={() => onSelectView(CURRENT_PAGE_VIEW.id)}
+            >
+              <span className="view-icon">{CURRENT_PAGE_VIEW.icon}</span>
+              <span className="view-label">{CURRENT_PAGE_VIEW.label}</span>
+            </div>
+          )}
+        </div>
+
+        <div className="sidebar-label" style={{ marginTop: 12 }}>
+          Detected Pages
         </div>
         <div>
           <div
-            className={`route-item ${routeFilter === "all" ? "active" : ""}`}
+            className={`route-item ${activeView === "current" && routeFilter === "all" ? "active" : ""}`}
             onClick={() => onSelectRoute("all")}
           >
             <span>all routes</span>
@@ -111,7 +129,16 @@ export const Sidebar = ({
             const routeHooks = hooks.filter((hook) =>
               hook.routes.includes(route),
             );
-            const isActive = routeFilter === route;
+            const isActive = activeView === "current" && routeFilter === route;
+            const mismatchCount = coverage?.inconsistentUrls.length ?? 0;
+            const duplicateCount = coverage?.duplicateUrls.length ?? 0;
+            const stalledCount = routeHooks.filter(
+              (hook) => hook.status === "stalled",
+            ).length;
+            const badRequestCount = routeHooks.reduce(
+              (sum, hook) => sum + hook.badRequestCount,
+              0,
+            );
 
             return (
               <div
@@ -119,24 +146,26 @@ export const Sidebar = ({
                 className={`route-item ${isActive ? "active" : ""}`}
                 onClick={() => onSelectRoute(route)}
               >
-                <span className="route-text">{route}</span>
-                <span className="route-meta">
-                  {isActive && <span className="current-badge">now</span>}
-                  {coverage && (
-                    <span
-                      className="route-percent"
-                      style={{
-                        color:
-                          coverage.coveragePct >= 75
-                            ? "var(--green)"
-                            : coverage.coveragePct >= 50
-                              ? "var(--yellow)"
-                              : "var(--red)",
-                      }}
-                    >
-                      {coverage.coveragePct}%
-                    </span>
-                  )}
+                <span className="route-main">
+                  <span className="route-text">{route}</span>
+                  <span className="route-issues">
+                    {mismatchCount > 0 && (
+                      <span className="nav-badge purple">⊛{mismatchCount}</span>
+                    )}
+                    {duplicateCount > 0 && (
+                      <span className="nav-badge orange">
+                        ⧉{duplicateCount}
+                      </span>
+                    )}
+                    {stalledCount > 0 && (
+                      <span className="nav-badge orange">⚠{stalledCount}</span>
+                    )}
+                    {badRequestCount > 0 && (
+                      <span className="nav-badge red">
+                        4xx{badRequestCount}
+                      </span>
+                    )}
+                  </span>
                 </span>
                 <span className="route-count">{routeHooks.length}</span>
               </div>
