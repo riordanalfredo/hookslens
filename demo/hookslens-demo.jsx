@@ -698,6 +698,111 @@ const INIT_TL = [
   },
 ];
 
+function PageAlerts({
+  pageParamCt,
+  pageMismatch,
+  pageDupCt,
+  pageDuplicateUrl,
+  pageStallCt,
+  pageStalled,
+  dimP,
+  onDismissParam,
+  onDismissDuplicate,
+}) {
+  return (
+    <>
+      {pageParamCt > 0 && pageMismatch && !dimP && (
+        <div className="alert-strip purple">
+          <strong>⊛ Param mismatch</strong> —{" "}
+          <code>{pageMismatch.endpoint}</code> uses{" "}
+          <code>{pageMismatch.sets[0]?.[0]}</code> in SWR but{" "}
+          <code>{pageMismatch.sets[1]?.[0]}</code> in useEffect. API returns 400
+          on the SWR call.
+          <span className="alert-dismiss" onClick={onDismissParam}>
+            ×
+          </span>
+        </div>
+      )}
+      {pageDupCt > 0 && pageDuplicateUrl && !dimP && (
+        <div className="alert-strip orange">
+          <strong>⧉ Duplicate</strong> — <code>{pageDuplicateUrl}</code> is
+          duplicated on the page. Remove one.
+          <span className="alert-dismiss" onClick={onDismissDuplicate}>
+            ×
+          </span>
+        </div>
+      )}
+      {pageStallCt > 0 && pageStalled && (
+        <div className="alert-strip red">
+          <strong>⚠ Stalled</strong> — <code>{pageStalled.hookName}</code>{" "}
+          in-flight &gt;5s. Heavy render or blocked upstream promise.
+        </div>
+      )}
+    </>
+  );
+}
+
+function RegistryAlerts({
+  paramCt,
+  dupCt,
+  stallCt,
+  badReqCt,
+  dimRegistry,
+  onDismissParam,
+  onDismissDuplicate,
+  onDismissStalled,
+  onDismissBadRequest,
+}) {
+  return (
+    <>
+      {paramCt > 0 && !dimRegistry.param && (
+        <div className="alert-strip purple">
+          <strong>⊛ Param mismatch</strong>
+          <span>
+            {paramCt} mismatched call{paramCt === 1 ? "" : "s"} detected.
+          </span>
+          <span className="alert-dismiss" onClick={onDismissParam}>
+            ×
+          </span>
+        </div>
+      )}
+      {dupCt > 0 && !dimRegistry.duplicate && (
+        <div className="alert-strip orange">
+          <strong>⧉ Duplicate</strong>
+          <span>
+            {dupCt} duplicate endpoint{dupCt === 1 ? "" : "s"} detected.
+          </span>
+          <span className="alert-dismiss" onClick={onDismissDuplicate}>
+            ×
+          </span>
+        </div>
+      )}
+      {stallCt > 0 && !dimRegistry.stalled && (
+        <div className="alert-strip red">
+          <strong>⚠ Stalled</strong>
+          <span>
+            {stallCt} stalled hook{stallCt === 1 ? "" : "s"} found.
+          </span>
+          <span className="alert-dismiss" onClick={onDismissStalled}>
+            ×
+          </span>
+        </div>
+      )}
+      {badReqCt > 0 && !dimRegistry.badReq && (
+        <div className="alert-strip red">
+          <strong>4xx</strong>
+          <span>
+            {badReqCt} bad request response{badReqCt === 1 ? "" : "s"} observed.
+          </span>
+          <span className="alert-dismiss" onClick={onDismissBadRequest}>
+            ×
+          </span>
+        </div>
+      )}
+    </>
+  );
+}
+
 const NAV = [
   { id: "page", icon: "⊡", label: "Current Page", badge: null, bc: "" },
   { id: "registry", icon: "◈", label: "All Hooks", badge: null, bc: "" },
@@ -895,7 +1000,7 @@ export default function HooksLens() {
       <style>{`${BASE_CSS} :root{${themeVars}}`}</style>
       <div className="app">
         {/* TOPBAR */}
-        <div className="topbar">
+        <div className={`topbar ${nav !== "page" ? "expanded" : "compact"}`}>
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
             <div className="logo">
               <div className="logo-icon">🔍</div>
@@ -914,24 +1019,24 @@ export default function HooksLens() {
             </button>
           </div>
           <div className="topbar-right">
-            {nav === "page" && pageParamCt > 0 && (
-              <span className="pill pill-purple">⊛ {pageParamCt} mismatch</span>
-            )}
-            {nav === "page" && pageDupCt > 0 && (
-              <span className="pill pill-orange">⧉ {pageDupCt} duplicate</span>
-            )}
-            {nav === "page" && pageStallCt > 0 && (
-              <span className="pill pill-red">
-                <span
-                  className="dot pulse"
-                  style={{ background: "var(--red)" }}
-                />
-                {pageStallCt} stalled
-              </span>
-            )}
-            {nav === "page" && page4xxCt > 0 && (
-              <span className="pill pill-red">4xx on {page4xxCt}</span>
-            )}
+            <div className="toolbar">
+              <div className="toolbar-row">
+                {nav !== "page" && (
+                  <input
+                    className="search-input"
+                    placeholder="filter by hook or key…"
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                  />
+                )}
+                <button className="btn" onClick={() => setPaused((p) => !p)}>
+                  {paused ? "▶ Resume" : "⏸ Pause"}
+                </button>
+                <button className="btn" onClick={() => setTl([])}>
+                  Clear log
+                </button>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -1056,102 +1161,39 @@ export default function HooksLens() {
         {/* MAIN */}
         <div className="main">
           {/* Alert strips */}
-          {nav === "page" && pageParamCt > 0 && pageMismatch && !dimP && (
-            <div className="alert-strip purple">
-              <strong>⊛ Param mismatch</strong> —{" "}
-              <code>{pageMismatch.endpoint}</code> uses{" "}
-              <code>{pageMismatch.sets[0]?.[0]}</code> in SWR but{" "}
-              <code>{pageMismatch.sets[1]?.[0]}</code> in useEffect. API returns
-              400 on the SWR call.
-              <span className="alert-dismiss" onClick={() => setDimP(true)}>
-                ×
-              </span>
-            </div>
+          {nav === "page" && (
+            <PageAlerts
+              pageParamCt={pageParamCt}
+              pageMismatch={pageMismatch}
+              pageDupCt={pageDupCt}
+              pageDuplicateUrl={pageDuplicateUrl}
+              pageStallCt={pageStallCt}
+              pageStalled={pageStalled}
+              dimP={dimP}
+              onDismissParam={() => setDimP(true)}
+              onDismissDuplicate={() => setDimD(true)}
+            />
           )}
-          {nav === "page" && pageDupCt > 0 && pageDuplicateUrl && !dimD && (
-            <div className="alert-strip orange">
-              <strong>⧉ Duplicate</strong> — <code>{pageDuplicateUrl}</code> is
-              duplicated on <code>{page}</code>. Remove one.
-              <span className="alert-dismiss" onClick={() => setDimD(true)}>
-                ×
-              </span>
-            </div>
-          )}
-          {nav === "page" && pageStallCt > 0 && pageStalled && (
-            <div className="alert-strip red">
-              <strong>⚠ Stalled</strong> — <code>{pageStalled.hookName}</code>{" "}
-              in-flight &gt;5s on <code>{page}</code>. Heavy render or blocked
-              upstream promise.
-            </div>
-          )}
-
-          {nav === "registry" && paramCt > 0 && !dimRegistry.param && (
-            <div className="alert-strip purple">
-              <strong>⊛ Param mismatch</strong>
-              <span>
-                {paramCt} mismatched call{paramCt === 1 ? "" : "s"} detected.
-              </span>
-              <span
-                className="alert-dismiss"
-                onClick={() =>
-                  setDimRegistry((current) => ({ ...current, param: true }))
-                }
-              >
-                ×
-              </span>
-            </div>
-          )}
-          {nav === "registry" && dupCt > 0 && !dimRegistry.duplicate && (
-            <div className="alert-strip orange">
-              <strong>⧉ Duplicate</strong>
-              <span>
-                {dupCt} duplicate endpoint{dupCt === 1 ? "" : "s"} detected.
-              </span>
-              <span
-                className="alert-dismiss"
-                onClick={() =>
-                  setDimRegistry((current) => ({
-                    ...current,
-                    duplicate: true,
-                  }))
-                }
-              >
-                ×
-              </span>
-            </div>
-          )}
-          {nav === "registry" && stallCt > 0 && !dimRegistry.stalled && (
-            <div className="alert-strip red">
-              <strong>⚠ Stalled</strong>
-              <span>
-                {stallCt} stalled hook{stallCt === 1 ? "" : "s"} found.
-              </span>
-              <span
-                className="alert-dismiss"
-                onClick={() =>
-                  setDimRegistry((current) => ({ ...current, stalled: true }))
-                }
-              >
-                ×
-              </span>
-            </div>
-          )}
-          {nav === "registry" && badReqCt > 0 && !dimRegistry.badReq && (
-            <div className="alert-strip red">
-              <strong>4xx</strong>
-              <span>
-                {badReqCt} bad request response{badReqCt === 1 ? "" : "s"}{" "}
-                observed.
-              </span>
-              <span
-                className="alert-dismiss"
-                onClick={() =>
-                  setDimRegistry((current) => ({ ...current, badReq: true }))
-                }
-              >
-                ×
-              </span>
-            </div>
+          {nav === "registry" && (
+            <RegistryAlerts
+              paramCt={paramCt}
+              dupCt={dupCt}
+              stallCt={stallCt}
+              badReqCt={badReqCt}
+              dimRegistry={dimRegistry}
+              onDismissParam={() =>
+                setDimRegistry((current) => ({ ...current, param: true }))
+              }
+              onDismissDuplicate={() =>
+                setDimRegistry((current) => ({ ...current, duplicate: true }))
+              }
+              onDismissStalled={() =>
+                setDimRegistry((current) => ({ ...current, stalled: true }))
+              }
+              onDismissBadRequest={() =>
+                setDimRegistry((current) => ({ ...current, badReq: true }))
+              }
+            />
           )}
 
           {/* Header */}
@@ -1206,20 +1248,6 @@ export default function HooksLens() {
               </div>
             </div>
             <div className="toolbar">
-              <div className="toolbar-row">
-                <input
-                  className="search-input"
-                  placeholder="filter by hook or key…"
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                />
-                <button className="btn" onClick={() => setPaused((p) => !p)}>
-                  {paused ? "▶ Resume" : "⏸ Pause"}
-                </button>
-                <button className="btn" onClick={() => setTl([])}>
-                  Clear log
-                </button>
-              </div>
               {nav !== "page" && (
                 <div className="route-filter">
                   <span className="route-filter-label">page:</span>
@@ -1238,6 +1266,32 @@ export default function HooksLens() {
                       {r}
                     </span>
                   ))}
+                </div>
+              )}
+              {nav === "page" && (
+                <div className="toolbar-row">
+                  {pageParamCt > 0 && (
+                    <span className="pill pill-purple">
+                      ⊛ {pageParamCt} mismatch
+                    </span>
+                  )}
+                  {pageDupCt > 0 && (
+                    <span className="pill pill-orange">
+                      ⧉ {pageDupCt} duplicate
+                    </span>
+                  )}
+                  {pageStallCt > 0 && (
+                    <span className="pill pill-red">
+                      <span
+                        className="dot pulse"
+                        style={{ background: "var(--red)" }}
+                      />
+                      {pageStallCt} stalled
+                    </span>
+                  )}
+                  {page4xxCt > 0 && (
+                    <span className="pill pill-red">4xx on {page4xxCt}</span>
+                  )}
                 </div>
               )}
             </div>

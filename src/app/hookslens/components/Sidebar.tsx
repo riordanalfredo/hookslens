@@ -25,7 +25,7 @@ const VIEW_ITEMS: Array<{ id: ViewMode; icon: string; label: string }> = [
 ];
 
 const CURRENT_PAGE_VIEW = VIEW_ITEMS.find((item) => item.id === "current");
-const TRACKER_VIEWS = VIEW_ITEMS.filter((item) => item.id !== "current");
+const OTHER_VIEWS = VIEW_ITEMS.filter((item) => item.id !== "current");
 
 export const Sidebar = ({
   hooks,
@@ -77,7 +77,7 @@ export const Sidebar = ({
       <section className="sidebar-section sidebar-scroll">
         <div className="sidebar-label">Views</div>
         <div>
-          {TRACKER_VIEWS.map((item) => (
+          {OTHER_VIEWS.map((item) => (
             <div
               key={item.id}
               className={`view-item ${activeView === item.id ? "active" : ""}`}
