@@ -304,6 +304,25 @@
   color: var(--text3);
 }
 
+.hookslens-root .route-main {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  min-width: 0;
+  flex: 1;
+}
+
+.hookslens-root .route-issues {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.hookslens-root .route-issues .nav-badge {
+  margin-left: 0;
+}
+
 .hookslens-root .route-text,
 .hookslens-root .route-meta {
   display: flex;

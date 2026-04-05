@@ -5,6 +5,7 @@ interface TopbarProps {
   theme: ThemeMode;
   onToggleTheme: () => void;
   stats: PanelStats;
+  showDiagnostics?: boolean;
 }
 
 export const Topbar = ({
@@ -12,6 +13,7 @@ export const Topbar = ({
   theme,
   onToggleTheme,
   stats,
+  showDiagnostics = true,
 }: TopbarProps) => {
   return (
     <div className="topbar">
@@ -21,10 +23,7 @@ export const Topbar = ({
           hookslens
           <span className="logo-ver">v0.3</span>
         </div>
-        <span className="logo-path">/hookslens</span>
-      </div>
 
-      <div className="topbar-right">
         <button className="theme-btn" onClick={onToggleTheme}>
           {theme === "dark" ? "Light mode" : "Dark mode"}
         </button>
@@ -36,17 +35,21 @@ export const Topbar = ({
           />
           {connected ? "connected" : "reconnecting"}
         </span>
+      </div>
 
-        {stats.mismatchCount > 0 && (
-          <span className="pill orange">mismatch {stats.mismatchCount}</span>
+      <div className="topbar-right">
+        {showDiagnostics && stats.mismatchCount > 0 && (
+          <span className="pill orange">⊛ {stats.mismatchCount} mismatch</span>
         )}
-        {stats.duplicateCount > 0 && (
-          <span className="pill orange">duplicate {stats.duplicateCount}</span>
+        {showDiagnostics && stats.duplicateCount > 0 && (
+          <span className="pill orange">
+            ⧉ {stats.duplicateCount} duplicate
+          </span>
         )}
-        {stats.stalledCount > 0 && (
-          <span className="pill red">stalled {stats.stalledCount}</span>
+        {showDiagnostics && stats.stalledCount > 0 && (
+          <span className="pill red">{stats.stalledCount} stalled</span>
         )}
-        {stats.badRequestCount > 0 && (
+        {showDiagnostics && stats.badRequestCount > 0 && (
           <span className="pill red">4xx hooks {stats.badRequestCount}</span>
         )}
       </div>

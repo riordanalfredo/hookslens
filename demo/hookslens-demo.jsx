@@ -3,7 +3,7 @@
  */
 import { useState, useEffect, useRef } from "react";
 
-const FONTS = `@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=Syne:wght@700;800&display=swap');`;
+const FONTS = `@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=Syne:wght@400;500;700;800&display=swap');`;
 
 // ─── Theme tokens ─────────────────────────────────────────────────────────────
 const LIGHT = `
@@ -83,6 +83,10 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;overf
 .route-nav-item{display:flex;align-items:center;padding:5px 14px;cursor:pointer;font-size:13px;color:var(--text2);transition:all .1s;border-left:2px solid transparent;gap:5px;font-family:'JetBrains Mono',monospace;}
 .route-nav-item:hover{background:var(--surface2);color:var(--text);}
 .route-nav-item.active{background:var(--accent-bg);color:var(--accent);border-left-color:var(--accent);}
+.route-main{display:flex;flex-direction:column;align-items:flex-start;gap:4px;min-width:0;flex:1;}
+.route-text{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.route-issues{display:flex;gap:4px;flex-wrap:wrap;}
+.route-issues .nav-badge{margin-left:0;}
 .current-badge{font-size:8px;padding:1px 5px;border-radius:3px;background:var(--accent-bg);border:1px solid var(--accent-border);color:var(--accent);}
 .cov-pct-label{font-size:11px;margin-left:auto;font-family:'Inter',sans-serif;}
 
@@ -706,7 +710,7 @@ const NAV = [
   },
   { id: "coverage", icon: "◉", label: "Fetch Coverage", badge: null, bc: "" },
   { id: "waterfall", icon: "≋", label: "Waterfall", badge: null, bc: "" },
-  { id: "polling", icon: "⟳", label: "Polling", badge: "3", bc: "yellow" },
+  { id: "polling", icon: "⟳", label: "Polling", badge: null, bc: "yellow" },
 ];
 
 function tn() {
@@ -795,6 +799,12 @@ export default function HooksLens() {
   const [paused, setPaused] = useState(false);
   const [dimP, setDimP] = useState(false);
   const [dimD, setDimD] = useState(false);
+  const [dimRegistry, setDimRegistry] = useState({
+    param: false,
+    duplicate: false,
+    stalled: false,
+    badReq: false,
+  });
   const pr = useRef(false);
   pr.current = paused;
   const nid = useRef(600);
@@ -856,10 +866,24 @@ export default function HooksLens() {
     (h) => h.interval && (rf === "all" || h.route === rf),
   );
 
-  const paramCt = MISMATCHES.length;
-  const dupCt = allOnPage.filter((h) => h.dup).length;
+  const paramCt = MISMATCHES.reduce((sum, mismatch) => sum + mismatch.count, 0);
+  const dupCt = COVERAGE.reduce(
+    (sum, routeCoverage) => sum + routeCoverage.dups.length,
+    0,
+  );
   const stallCt = allHooks.filter((h) => h.status === "stalled").length;
-  const badReqCt = allHooks.filter((h) => h.badReq > 0).length;
+  const badReqCt = allHooks.reduce((sum, hook) => sum + hook.badReq, 0);
+  const pageParamCt = MISMATCHES.filter((m) => m.route === page).reduce(
+    (sum, mismatch) => sum + mismatch.count,
+    0,
+  );
+  const pageDupCt = COVERAGE.find((c) => c.route === page)?.dups.length ?? 0;
+  const pageStallCt = allOnPage.filter((h) => h.status === "stalled").length;
+  const page4xxCt = allOnPage.reduce((sum, hook) => sum + hook.badReq, 0);
+  const pageMismatch = MISMATCHES.find((m) => m.route === page) ?? null;
+  const pageDuplicateUrl =
+    COVERAGE.find((c) => c.route === page)?.dups[0] ?? null;
+  const pageStalled = allOnPage.find((h) => h.status === "stalled") ?? null;
   const pollingCt = allHooks.filter((h) => h.interval).length;
   const fTl = rf === "all" ? tl : tl.filter((e) => e.route === rf);
   const wfMax = Math.max(...fWf.map((w) => w.start + (w.dur || 1200)), 1500);
@@ -878,12 +902,6 @@ export default function HooksLens() {
               hookslens
               <span className="logo-ver">DEMO</span>
             </div>
-            <span className="logo-path">/hookslens</span>
-          </div>
-          <div className="topbar-right">
-            <button className="theme-btn" onClick={() => setDark((d) => !d)}>
-              {dark ? "☀️ Light mode" : "🌙 Dark mode"}
-            </button>
             <span className={`pill pill-green`}>
               <span
                 className="dot pulse"
@@ -891,23 +909,28 @@ export default function HooksLens() {
               />
               connected
             </span>
-            {paramCt > 0 && (
-              <span className="pill pill-purple">⊛ {paramCt} mismatch</span>
+            <button className="theme-btn" onClick={() => setDark((d) => !d)}>
+              {dark ? "☀️ Light mode" : "🌙 Dark mode"}
+            </button>
+          </div>
+          <div className="topbar-right">
+            {nav === "page" && pageParamCt > 0 && (
+              <span className="pill pill-purple">⊛ {pageParamCt} mismatch</span>
             )}
-            {dupCt > 0 && (
-              <span className="pill pill-orange">⧉ {dupCt} duplicate</span>
+            {nav === "page" && pageDupCt > 0 && (
+              <span className="pill pill-orange">⧉ {pageDupCt} duplicate</span>
             )}
-            {stallCt > 0 && (
+            {nav === "page" && pageStallCt > 0 && (
               <span className="pill pill-red">
                 <span
                   className="dot pulse"
                   style={{ background: "var(--red)" }}
                 />
-                {stallCt} stalled
+                {pageStallCt} stalled
               </span>
             )}
-            {badReqCt > 0 && (
-              <span className="pill pill-red">4xx on {badReqCt}</span>
+            {nav === "page" && page4xxCt > 0 && (
+              <span className="pill pill-red">4xx on {page4xxCt}</span>
             )}
           </div>
         </div>
@@ -924,14 +947,12 @@ export default function HooksLens() {
               <div className="stat-label">mismatches</div>
             </div>
             <div className="stat-box">
-              <div className="stat-val c-orange">
-                {allHooks.filter((h) => h.dup).length}
-              </div>
+              <div className="stat-val c-orange">{dupCt}</div>
               <div className="stat-label">duplicates</div>
             </div>
             <div className="stat-box">
               <div className="stat-val c-red">{badReqCt}</div>
-              <div className="stat-label">4xx hooks</div>
+              <div className="stat-label">4xx calls</div>
             </div>
             <div className="stat-box">
               <div className="stat-val c-orange">{stallCt}</div>
@@ -945,7 +966,7 @@ export default function HooksLens() {
 
           <div className="nav-section">
             <div className="nav-section-label">Views</div>
-            {NAV.map((n) => (
+            {NAV.filter((n) => n.id !== "page").map((n) => (
               <div
                 key={n.id}
                 className={`nav-item ${nav === n.id ? "active" : ""}`}
@@ -956,18 +977,45 @@ export default function HooksLens() {
                 {n.badge && (
                   <span className={`nav-badge ${n.bc}`}>{n.badge}</span>
                 )}
+                {n.id === "polling" && pollingCt > 0 && (
+                  <span className="nav-badge yellow">{pollingCt}</span>
+                )}
               </div>
             ))}
           </div>
 
           <div className="nav-section" style={{ flex: 1, overflowY: "auto" }}>
-            <div className="nav-section-label">Pages</div>
+            <div className="nav-section-label">Current Page</div>
+            {NAV.filter((n) => n.id === "page").map((n) => (
+              <div
+                key={n.id}
+                className={`nav-item ${nav === n.id ? "active" : ""}`}
+                onClick={() => setNav(n.id)}
+              >
+                <span style={{ fontSize: 13 }}>{n.icon}</span>
+                <span>{n.label}</span>
+              </div>
+            ))}
+
+            <div className="nav-section-label">Detected Pages</div>
             {pages.map((r) => {
               const phooks = PAGES[r];
               const total =
                 phooks.swr.length + phooks.custom.length + phooks.effect.length;
-              const cov = COVERAGE.find((c) => c.route === r);
-              const isCurrent = r === page;
+              const routeHooks = allHooks.filter((h) => h.route === r);
+              const routeCoverage = COVERAGE.find((c) => c.route === r);
+              const routeMismatchCt = MISMATCHES.filter(
+                (m) => m.route === r,
+              ).reduce((sum, mismatch) => sum + mismatch.count, 0);
+              const routeDupCt = routeCoverage?.dups.length ?? 0;
+              const routeStallCt = routeHooks.filter(
+                (h) => h.status === "stalled",
+              ).length;
+              const route4xxCt = routeHooks.reduce(
+                (sum, h) => sum + h.badReq,
+                0,
+              );
+              const isCurrent = nav === "page" && r === page;
               return (
                 <div
                   key={r}
@@ -977,32 +1025,27 @@ export default function HooksLens() {
                     setNav("page");
                   }}
                 >
-                  <span
-                    style={{
-                      flex: 1,
-                      overflow: "hidden",
-                      textOverflow: "ellipsis",
-                      whiteSpace: "nowrap",
-                    }}
-                  >
-                    {r}
-                  </span>
-                  {isCurrent && <span className="current-badge">now</span>}
-                  {cov && (
-                    <span
-                      className="cov-pct-label"
-                      style={{
-                        color:
-                          cov.pct >= 75
-                            ? "var(--green)"
-                            : cov.pct >= 50
-                              ? "var(--yellow)"
-                              : "var(--red)",
-                      }}
-                    >
-                      {cov.pct}%
+                  <span className="route-main">
+                    <span className="route-text">{r}</span>
+                    <span className="route-issues">
+                      {routeMismatchCt > 0 && (
+                        <span className="nav-badge purple">
+                          ⊛{routeMismatchCt}
+                        </span>
+                      )}
+                      {routeDupCt > 0 && (
+                        <span className="nav-badge orange">⧉{routeDupCt}</span>
+                      )}
+                      {routeStallCt > 0 && (
+                        <span className="nav-badge orange">
+                          ⚠{routeStallCt}
+                        </span>
+                      )}
+                      {route4xxCt > 0 && (
+                        <span className="nav-badge red">4xx{route4xxCt}</span>
+                      )}
                     </span>
-                  )}
+                  </span>
                   <span className="nav-badge">{total}</span>
                 </div>
               );
@@ -1013,29 +1056,101 @@ export default function HooksLens() {
         {/* MAIN */}
         <div className="main">
           {/* Alert strips */}
-          {paramCt > 0 && !dimP && (
+          {nav === "page" && pageParamCt > 0 && pageMismatch && !dimP && (
             <div className="alert-strip purple">
-              <strong>⊛ Param mismatch</strong> — <code>/api/reviews</code> uses{" "}
-              <code>productId</code> in SWR but <code>product</code> in
-              useEffect. API returns 400 on the SWR call.
+              <strong>⊛ Param mismatch</strong> —{" "}
+              <code>{pageMismatch.endpoint}</code> uses{" "}
+              <code>{pageMismatch.sets[0]?.[0]}</code> in SWR but{" "}
+              <code>{pageMismatch.sets[1]?.[0]}</code> in useEffect. API returns
+              400 on the SWR call.
               <span className="alert-dismiss" onClick={() => setDimP(true)}>
                 ×
               </span>
             </div>
           )}
-          {dupCt > 0 && !dimD && (
+          {nav === "page" && pageDupCt > 0 && pageDuplicateUrl && !dimD && (
             <div className="alert-strip orange">
-              <strong>⧉ Duplicate</strong> — <code>/api/reviews</code> fired by
-              both SWR and useEffect on <code>{page}</code>. Remove one.
+              <strong>⧉ Duplicate</strong> — <code>{pageDuplicateUrl}</code> is
+              duplicated on <code>{page}</code>. Remove one.
               <span className="alert-dismiss" onClick={() => setDimD(true)}>
                 ×
               </span>
             </div>
           )}
-          {stallCt > 0 && (
+          {nav === "page" && pageStallCt > 0 && pageStalled && (
             <div className="alert-strip red">
-              <strong>⚠ Stalled</strong> — <code>useCart</code> in-flight &gt;5s
-              on <code>/cart</code>. Heavy render or blocked upstream promise.
+              <strong>⚠ Stalled</strong> — <code>{pageStalled.hookName}</code>{" "}
+              in-flight &gt;5s on <code>{page}</code>. Heavy render or blocked
+              upstream promise.
+            </div>
+          )}
+
+          {nav === "registry" && paramCt > 0 && !dimRegistry.param && (
+            <div className="alert-strip purple">
+              <strong>⊛ Param mismatch</strong>
+              <span>
+                {paramCt} mismatched call{paramCt === 1 ? "" : "s"} detected.
+              </span>
+              <span
+                className="alert-dismiss"
+                onClick={() =>
+                  setDimRegistry((current) => ({ ...current, param: true }))
+                }
+              >
+                ×
+              </span>
+            </div>
+          )}
+          {nav === "registry" && dupCt > 0 && !dimRegistry.duplicate && (
+            <div className="alert-strip orange">
+              <strong>⧉ Duplicate</strong>
+              <span>
+                {dupCt} duplicate endpoint{dupCt === 1 ? "" : "s"} detected.
+              </span>
+              <span
+                className="alert-dismiss"
+                onClick={() =>
+                  setDimRegistry((current) => ({
+                    ...current,
+                    duplicate: true,
+                  }))
+                }
+              >
+                ×
+              </span>
+            </div>
+          )}
+          {nav === "registry" && stallCt > 0 && !dimRegistry.stalled && (
+            <div className="alert-strip red">
+              <strong>⚠ Stalled</strong>
+              <span>
+                {stallCt} stalled hook{stallCt === 1 ? "" : "s"} found.
+              </span>
+              <span
+                className="alert-dismiss"
+                onClick={() =>
+                  setDimRegistry((current) => ({ ...current, stalled: true }))
+                }
+              >
+                ×
+              </span>
+            </div>
+          )}
+          {nav === "registry" && badReqCt > 0 && !dimRegistry.badReq && (
+            <div className="alert-strip red">
+              <strong>4xx</strong>
+              <span>
+                {badReqCt} bad request response{badReqCt === 1 ? "" : "s"}{" "}
+                observed.
+              </span>
+              <span
+                className="alert-dismiss"
+                onClick={() =>
+                  setDimRegistry((current) => ({ ...current, badReq: true }))
+                }
+              >
+                ×
+              </span>
             </div>
           )}
 
@@ -1680,7 +1795,7 @@ export default function HooksLens() {
                 )}
               </div>
               <span className="timeline-hint">
-                purple = param mismatch · orange = duplicate · red = error/stall
+                yellow = param mismatch · orange = duplicate · red = error/stall
                 · hook name shown
               </span>
             </div>
