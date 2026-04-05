@@ -21,7 +21,7 @@ export const Topbar = ({
           hookslens
           <span className="logo-ver">v0.3</span>
         </div>
-        <span className="logo-path">/__hookslens</span>
+        <span className="logo-path">/hookslens</span>
       </div>
 
       <div className="topbar-right">

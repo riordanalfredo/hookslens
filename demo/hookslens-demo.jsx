@@ -10,8 +10,8 @@ const LIGHT = `
   --bg:#f4f6f9; --surface:#ffffff; --surface2:#f0f2f6; --surface3:#e8eaef;
   --border:#e2e6ec; --border2:#d0d5de;
   --text:#0f172a; --text2:#475569; --text3:#94a3b8; --text4:#cbd5e1;
-  --accent:#2563eb; --accent-bg:#eff6ff; --accent-border:rgba(37,99,235,.18);
-  --purple:#7c3aed; --purple-bg:#f5f3ff; --purple-border:rgba(124,58,237,.18);
+  --accent:#92650a; --accent2:#b8860b; --accent-bg:#eff6ff; --accent-border:rgba(37,99,235,.18);
+  --purple:#b8860b; --purple-bg:#fff8dc; --purple-border:rgba(184,134,11,.18);
   --green:#16a34a; --green-bg:#f0fdf4; --green-border:rgba(22,163,74,.18);
   --yellow:#ca8a04; --yellow-bg:#fefce8; --yellow-border:rgba(202,138,4,.18);
   --red:#dc2626; --red-bg:#fef2f2; --red-border:rgba(220,38,38,.18);
@@ -22,11 +22,11 @@ const LIGHT = `
   --toggle-icon:"🌙";
 `;
 const DARK = `
-  --bg:#080c12; --surface:#0f1520; --surface2:#151d2b; --surface3:#1c2638;
-  --border:#1e2d42; --border2:#263650;
+  --bg:#0a0c10; --surface:#111318; --surface2:#181c24; --surface3:#1f2530;
+  --border:#1e2330; --border2:#252d3d;
   --text:#e2e8f0; --text2:#94a3b8; --text3:#475569; --text4:#2d3d55;
-  --accent:#3b82f6; --accent-bg:rgba(59,130,246,.1); --accent-border:rgba(59,130,246,.25);
-  --purple:#a855f7; --purple-bg:rgba(168,85,247,.1); --purple-border:rgba(168,85,247,.25);
+  --accent:#f0b429; --accent2:#c9a050; --accent-bg:rgba(240,180,41,.1); --accent-border:rgba(240,180,41,.25);
+  --purple:#c9a050; --purple-bg:rgba(201,160,80,.1); --purple-border:rgba(201,160,80,.25);
   --green:#22c55e; --green-bg:rgba(34,197,94,.1); --green-border:rgba(34,197,94,.25);
   --yellow:#eab308; --yellow-bg:rgba(234,179,8,.1); --yellow-border:rgba(234,179,8,.25);
   --red:#ef4444; --red-bg:rgba(239,68,68,.1); --red-border:rgba(239,68,68,.25);
@@ -786,7 +786,7 @@ function HookCard({ h }) {
 }
 
 export default function HooksLens() {
-  const [dark, setDark] = useState(false);
+  const [dark, setDark] = useState(true);
   const [nav, setNav] = useState("page");
   const [page, setPage] = useState("/products/[productId]");
   const [tl, setTl] = useState(INIT_TL);
@@ -876,9 +876,9 @@ export default function HooksLens() {
             <div className="logo">
               <div className="logo-icon">🔍</div>
               hookslens
-              <span className="logo-ver">v0.3</span>
+              <span className="logo-ver">DEMO</span>
             </div>
-            <span className="logo-path">/__hookslens</span>
+            <span className="logo-path">/hookslens</span>
           </div>
           <div className="topbar-right">
             <button className="theme-btn" onClick={() => setDark((d) => !d)}>
