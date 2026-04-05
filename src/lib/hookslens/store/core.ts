@@ -4,270 +4,149 @@ import {
   type CustomHookRegistration,
   type FetchEvent,
   type FetchMethod,
-  type FetchOrigin,
   type HookEntry,
   type ParamMismatch,
-  type ParamSnapshot,
   type RouteCoverage,
   type TimelineEvent,
   type WaterfallEntry,
 } from "./types";
+
 import { createId } from "../id";
+import { DiagnosticsBuilder } from "./DiagnosticsBuilder";
+import { HookCatalog } from "./HookCatalog";
+import { RequestLifecycleCoordinator } from "./RequestLifecycleCoordinator";
+import {
+  ParamMismatchTracker,
+  RouteCoverageTracker,
+  WaterfallTracker,
+  type TrackerRegistry,
+  type TrackerName,
+} from "./trackers/index";
 
+export interface HooksLensStoreSnapshot {
+  hooks: HookEntry[];
+  timeline: TimelineEvent[];
+  waterfall: WaterfallEntry[];
+  routeCoverage: RouteCoverage[];
+  diagnostics: ReturnType<HooksLensStore["getDiagnostics"]>;
+  routes: string[];
+  fetchEvents: FetchEvent[];
+}
+
+/**
+ * HooksLensStore is the central state management class for HooksLens. It maintains the registry of hooks, tracks fetch events, and generates diagnostics based on the collected data. It uses an event-driven architecture to notify subscribers of updates to hooks and timeline events.
+ */
 export class HooksLensStore extends EventTarget {
-  private hooks = new Map<string, HookEntry>();
-  private hookRoutes = new Map<string, Set<string>>();
-  private timeline: TimelineEvent[] = [];
-  private waterfall: WaterfallEntry[] = [];
-  private fetchEvents: FetchEvent[] = [];
-  private paramMismatches = new Map<string, ParamMismatch>();
-  private inFlight = new Map<string, number>();
-  private stallTimers = new Map<string, ReturnType<typeof setTimeout>>();
-
-  private swrUrlsByRoute = new Map<string, Set<string>>();
-  private effectUrlsByRoute = new Map<string, Set<string>>();
-
   private readonly maxTimeline = 500;
   private readonly maxWaterfall = 100;
   private readonly maxFetchEvents = 500;
   private readonly maxRecentParams = 3;
+  private readonly defaultRoute = "/";
+
+  // Diagnostic thresholds
+  private readonly highInstanceThreshold = 4;
+  private readonly lowCoverageThreshold = 50;
+  private readonly minFetchesForCoverage = 2;
+
+  private readonly hookCatalog = new HookCatalog();
+  private timeline: TimelineEvent[] = [];
+  private fetchEvents: FetchEvent[] = [];
+  private readonly trackers: TrackerRegistry;
+  private readonly diagnosticsBuilder: DiagnosticsBuilder;
+  private readonly requestLifecycle: RequestLifecycleCoordinator;
+
+  constructor() {
+    super();
+    this.diagnosticsBuilder = new DiagnosticsBuilder(
+      this.highInstanceThreshold,
+      this.lowCoverageThreshold,
+      this.minFetchesForCoverage,
+    );
+    this.trackers = {
+      paramMismatch: new ParamMismatchTracker(),
+      routeCoverage: new RouteCoverageTracker(),
+      waterfall: new WaterfallTracker(this.maxWaterfall),
+    };
+    this.requestLifecycle = new RequestLifecycleCoordinator({
+      hookCatalog: this.hookCatalog,
+      trackers: this.trackers,
+      maxRecentParams: this.maxRecentParams,
+      maxFetchEvents: this.maxFetchEvents,
+      fetchEvents: this.fetchEvents,
+      pushEvent: (event) => this.pushEvent(event),
+      emitHooksUpdated: () => this.emit("hooks:updated"),
+      emitExternalFetch: () => this.emit("fetch:external"),
+    });
+  }
 
   registerHook(
     key: string,
     type: "query" | "mutation",
     refreshInterval?: number,
-    route = "/",
+    route = this.defaultRoute,
   ) {
-    const existing = this.hooks.get(key);
-    const routeSet = this.hookRoutes.get(key) ?? new Set<string>();
-    routeSet.add(route);
-    this.hookRoutes.set(key, routeSet);
-
-    this.hooks.set(key, {
-      key,
-      type,
-      status: existing?.status ?? "fresh",
-      instances: (existing?.instances ?? 0) + 1,
-      refreshInterval: refreshInterval ?? null,
-      lastDuration: existing?.lastDuration ?? null,
-      lastFetchedAt: existing?.lastFetchedAt ?? null,
-      fetchStartedAt: existing?.fetchStartedAt ?? null,
-      errorCount: existing?.errorCount ?? 0,
-      slowCount: existing?.slowCount ?? 0,
-      routes: Array.from(routeSet),
-      lastHttpStatus: existing?.lastHttpStatus ?? null,
-      badRequestCount: existing?.badRequestCount ?? 0,
-      lastUrl: existing?.lastUrl ?? null,
-      recentParams: existing?.recentParams ?? [],
-    });
+    this.hookCatalog.registerHook(key, type, refreshInterval, route);
     this.emit("hooks:updated");
   }
 
   registerCustomHook(input: CustomHookRegistration) {
-    const existing = this.hooks.get(input.name);
-    this.registerHook(input.name, "query", undefined, input.route);
-
-    if (existing) {
-      this.hooks.set(input.name, {
-        ...this.hooks.get(input.name)!,
-        lastUrl: input.fetchKey ?? existing.lastUrl,
-      });
-      this.emit("hooks:updated");
-    }
+    this.hookCatalog.registerCustomHook(input);
+    this.emit("hooks:updated");
   }
 
-  unregisterHook(key: string, route = "/") {
-    const existing = this.hooks.get(key);
-    if (!existing) return;
-    if (existing.instances <= 1) {
-      this.hooks.delete(key);
-      this.hookRoutes.delete(key);
-      this.clearStallTimer(key);
-    } else {
-      this.hooks.set(key, { ...existing, instances: existing.instances - 1 });
+  unregisterHook(key: string, route = this.defaultRoute) {
+    const result = this.hookCatalog.unregisterHook(key);
+    if (!result.changed) return;
+    if (result.deleted) {
+      this.requestLifecycle.onHookDeleted(key);
     }
     this.emit("hooks:updated");
   }
 
-  unregisterCustomHook(name: string, route = "/") {
+  unregisterCustomHook(name: string, route = this.defaultRoute) {
     this.unregisterHook(name, route);
   }
 
-  recordFetchStart(key: string, route = "/", url?: string) {
-    const now = Date.now();
-    const existing = this.hooks.get(key);
-    const concurrentWith = Array.from(this.inFlight.keys()).filter(
-      (inFlightKey) => inFlightKey !== key,
-    );
-    this.inFlight.set(key, now);
+  snapshot(): HooksLensStoreSnapshot {
+    const hooks = this.getHooks();
+    const timeline = this.getTimeline();
+    const { waterfall, paramMismatches, routeCoverage } =
+      this.buildTrackerData(hooks);
 
-    const params = url ? this.parseParams(url, "GET") : null;
+    return {
+      hooks,
+      timeline,
+      waterfall,
+      routeCoverage,
+      diagnostics: this.buildDiagnostics(hooks, paramMismatches, routeCoverage),
+      routes: this.getRoutes(),
+      fetchEvents: this.getFetchEvents(),
+    };
+  }
 
-    if (existing) {
-      const updatedParams = params
-        ? [params, ...existing.recentParams].slice(0, this.maxRecentParams)
-        : existing.recentParams;
-
-      this.hooks.set(key, {
-        ...existing,
-        status: "fetching",
-        fetchStartedAt: now,
-        lastUrl: url ?? existing.lastUrl,
-        recentParams: updatedParams,
-      });
-
-      if (updatedParams.length >= 2) {
-        this.detectParamMismatch(key, updatedParams, route);
-      }
-    }
-
-    if (url) {
-      const parsed = this.tryParseUrl(url);
-      if (parsed) {
-        const routeUrls = this.swrUrlsByRoute.get(route) ?? new Set();
-        routeUrls.add(parsed.pathname);
-        this.swrUrlsByRoute.set(route, routeUrls);
-        this.checkDuplicateFetch(parsed.pathname, route, "swr", key);
-      }
-    }
-
-    this.clearStallTimer(key);
-    this.stallTimers.set(
-      key,
-      setTimeout(() => {
-        const current = this.hooks.get(key);
-        if (current?.status === "fetching") {
-          this.hooks.set(key, { ...current, status: "stalled" });
-          this.pushEvent({
-            type: "stalled",
-            key,
-            duration: STALL_THRESHOLD_MS,
-            route,
-            concurrentWith: [],
-            httpStatus: null,
-            origin: "swr",
-            flagged: true,
-          });
-          this.emit("hooks:updated");
-        }
-      }, STALL_THRESHOLD_MS),
-    );
-
-    this.pushEvent({
-      type: "fetch",
-      key,
-      duration: null,
-      route,
-      concurrentWith,
-      httpStatus: null,
-      origin: "swr",
-      flagged: false,
-    });
-    this.addWaterfallEntry({
-      key,
-      route,
-      origin: "swr",
-      startedAt: now,
-      concurrent: concurrentWith,
-    });
-    this.emit("hooks:updated");
+  recordFetchStart(key: string, route = this.defaultRoute, url?: string) {
+    this.requestLifecycle.recordFetchStart(key, route, url);
   }
 
   recordFetchSuccess(
     key: string,
     duration: number,
-    route = "/",
+    route = this.defaultRoute,
     httpStatus = 200,
   ) {
-    const existing = this.hooks.get(key);
-    const isSlow = duration >= SLOW_FETCH_THRESHOLD_MS;
-    this.inFlight.delete(key);
-    this.clearStallTimer(key);
-
-    if (existing) {
-      this.hooks.set(key, {
-        ...existing,
-        status: "fresh",
-        lastDuration: duration,
-        lastFetchedAt: Date.now(),
-        fetchStartedAt: null,
-        slowCount: existing.slowCount + (isSlow ? 1 : 0),
-        lastHttpStatus: httpStatus,
-      });
-    }
-
-    this.pushEvent({
-      type: "success",
-      key,
-      duration,
-      route,
-      concurrentWith: [],
-      httpStatus,
-      origin: "swr",
-      flagged: false,
-    });
-    if (isSlow) {
-      this.pushEvent({
-        type: "slow",
-        key,
-        duration,
-        route,
-        concurrentWith: [],
-        httpStatus,
-        origin: "swr",
-        flagged: true,
-      });
-    }
-
-    this.completeWaterfallEntry(
-      key,
-      duration,
-      isSlow ? "slow" : "success",
-      httpStatus,
-    );
-    this.emit("hooks:updated");
+    this.requestLifecycle.recordFetchSuccess(key, duration, route, httpStatus);
   }
 
   recordFetchError(
     key: string,
     duration: number,
-    route = "/",
+    route = this.defaultRoute,
     httpStatus?: number,
   ) {
-    const existing = this.hooks.get(key);
-    this.inFlight.delete(key);
-    this.clearStallTimer(key);
-
-    const isBadRequest =
-      httpStatus !== undefined && httpStatus >= 400 && httpStatus < 500;
-
-    if (existing) {
-      this.hooks.set(key, {
-        ...existing,
-        status: "error",
-        errorCount: existing.errorCount + 1,
-        lastDuration: duration,
-        fetchStartedAt: null,
-        lastHttpStatus: httpStatus ?? null,
-        badRequestCount: existing.badRequestCount + (isBadRequest ? 1 : 0),
-      });
-    }
-
-    this.pushEvent({
-      type: "error",
-      key,
-      duration,
-      route,
-      concurrentWith: [],
-      httpStatus: httpStatus ?? null,
-      origin: "swr",
-      flagged: isBadRequest,
-    });
-    this.completeWaterfallEntry(key, duration, "error", httpStatus ?? null);
-    this.emit("hooks:updated");
+    this.requestLifecycle.recordFetchError(key, duration, route, httpStatus);
   }
 
-  recordDedup(key: string, route = "/") {
+  recordDedup(key: string, route = this.defaultRoute) {
     this.pushEvent({
       type: "dedup",
       key,
@@ -280,92 +159,31 @@ export class HooksLensStore extends EventTarget {
     });
   }
 
-  recordMutationStart(key: string, route = "/", url?: string) {
-    const existing = this.hooks.get(key);
-    if (existing) {
-      this.hooks.set(key, {
-        ...existing,
-        status: "fetching",
-        fetchStartedAt: Date.now(),
-        lastUrl: url ?? existing.lastUrl,
-      });
-    }
-
-    this.pushEvent({
-      type: "mutation",
-      key,
-      duration: null,
-      route,
-      concurrentWith: [],
-      httpStatus: null,
-      origin: "swr",
-      flagged: false,
-    });
-    this.emit("hooks:updated");
+  recordMutationStart(key: string, route = this.defaultRoute, url?: string) {
+    this.requestLifecycle.recordMutationStart(key, route, url);
   }
 
   recordMutationSuccess(
     key: string,
     duration: number,
-    route = "/",
+    route = this.defaultRoute,
     httpStatus = 200,
   ) {
-    const existing = this.hooks.get(key);
-    if (existing) {
-      this.hooks.set(key, {
-        ...existing,
-        status: "fresh",
-        lastDuration: duration,
-        fetchStartedAt: null,
-        lastHttpStatus: httpStatus,
-      });
-    }
-
-    this.pushEvent({
-      type: "mutation-success",
+    this.requestLifecycle.recordMutationSuccess(
       key,
       duration,
       route,
-      concurrentWith: [],
       httpStatus,
-      origin: "swr",
-      flagged: false,
-    });
-    this.emit("hooks:updated");
+    );
   }
 
   recordMutationError(
     key: string,
     duration: number,
-    route = "/",
+    route = this.defaultRoute,
     httpStatus?: number,
   ) {
-    const existing = this.hooks.get(key);
-    const isBadRequest =
-      httpStatus !== undefined && httpStatus >= 400 && httpStatus < 500;
-
-    if (existing) {
-      this.hooks.set(key, {
-        ...existing,
-        status: "error",
-        errorCount: existing.errorCount + 1,
-        fetchStartedAt: null,
-        lastHttpStatus: httpStatus ?? null,
-        badRequestCount: existing.badRequestCount + (isBadRequest ? 1 : 0),
-      });
-    }
-
-    this.pushEvent({
-      type: "mutation-error",
-      key,
-      duration,
-      route,
-      concurrentWith: [],
-      httpStatus: httpStatus ?? null,
-      origin: "swr",
-      flagged: isBadRequest,
-    });
-    this.emit("hooks:updated");
+    this.requestLifecycle.recordMutationError(key, duration, route, httpStatus);
   }
 
   recordExternalFetchStart(
@@ -374,49 +192,7 @@ export class HooksLensStore extends EventTarget {
     route: string,
     fetchId: string,
   ) {
-    const parsed = this.tryParseUrl(url);
-    const pathname = parsed?.pathname ?? url;
-
-    const routeUrls = this.effectUrlsByRoute.get(route) ?? new Set();
-    routeUrls.add(pathname);
-    this.effectUrlsByRoute.set(route, routeUrls);
-    this.checkDuplicateFetch(pathname, route, "effect", fetchId);
-
-    const params = this.parseParams(url, method);
-    const event: FetchEvent = {
-      id: fetchId,
-      timestamp: Date.now(),
-      url,
-      pathname,
-      method,
-      origin: "effect",
-      route,
-      status: null,
-      duration: null,
-      params,
-      swrKey: null,
-    };
-    this.fetchEvents.unshift(event);
-    if (this.fetchEvents.length > this.maxFetchEvents) this.fetchEvents.pop();
-
-    this.pushEvent({
-      type: "external-fetch",
-      key: url,
-      duration: null,
-      route,
-      concurrentWith: [],
-      httpStatus: null,
-      origin: "effect",
-      flagged: false,
-    });
-    this.addWaterfallEntry({
-      key: pathname,
-      route,
-      origin: "effect",
-      startedAt: Date.now(),
-      concurrent: [],
-    });
-    this.emit("fetch:external");
+    this.requestLifecycle.recordExternalFetchStart(url, method, route, fetchId);
   }
 
   recordExternalFetchDone(
@@ -426,67 +202,21 @@ export class HooksLensStore extends EventTarget {
     route: string,
     url: string,
   ) {
-    const pathname = this.tryParseUrl(url)?.pathname ?? url;
-    const isBadRequest = httpStatus >= 400 && httpStatus < 500;
-    const isSlow = duration >= SLOW_FETCH_THRESHOLD_MS;
-    const isError = httpStatus >= 400;
-
-    const idx = this.fetchEvents.findIndex((event) => event.id === fetchId);
-    if (idx !== -1) {
-      this.fetchEvents[idx] = {
-        ...this.fetchEvents[idx],
-        status: httpStatus,
-        duration,
-      };
-    }
-
-    const type = isError ? "external-error" : "external-success";
-    this.pushEvent({
-      type,
-      key: url,
+    this.requestLifecycle.recordExternalFetchDone(
+      fetchId,
       duration,
+      httpStatus,
       route,
-      concurrentWith: [],
-      httpStatus,
-      origin: "effect",
-      flagged: isBadRequest || isSlow,
-    });
-    if (isSlow) {
-      this.pushEvent({
-        type: "slow",
-        key: url,
-        duration,
-        route,
-        concurrentWith: [],
-        httpStatus,
-        origin: "effect",
-        flagged: true,
-      });
-    }
-
-    this.completeWaterfallEntry(
-      pathname,
-      duration,
-      isError ? "error" : isSlow ? "slow" : "success",
-      httpStatus,
+      url,
     );
-    this.emit("fetch:external");
   }
 
   getHooks(): HookEntry[] {
-    return Array.from(this.hooks.values());
+    return this.hookCatalog.all();
   }
 
   getTimeline(): TimelineEvent[] {
     return [...this.timeline];
-  }
-
-  getWaterfall(): WaterfallEntry[] {
-    return [...this.waterfall];
-  }
-
-  getParamMismatches(): ParamMismatch[] {
-    return Array.from(this.paramMismatches.values());
   }
 
   getFetchEvents(): FetchEvent[] {
@@ -494,221 +224,48 @@ export class HooksLensStore extends EventTarget {
   }
 
   getRoutes(): string[] {
-    const all = new Set<string>();
-    for (const routeSet of this.hookRoutes.values()) {
-      for (const route of routeSet) {
-        all.add(route);
-      }
-    }
-    return Array.from(all).sort();
+    return this.hookCatalog.routes();
   }
 
   getRouteCoverage(): RouteCoverage[] {
-    const routes = new Set<string>([
-      ...this.swrUrlsByRoute.keys(),
-      ...this.effectUrlsByRoute.keys(),
-    ]);
-
-    return Array.from(routes)
-      .map((route) => {
-        const swrUrls = this.swrUrlsByRoute.get(route) ?? new Set();
-        const effectUrls = this.effectUrlsByRoute.get(route) ?? new Set();
-
-        const duplicateUrls = Array.from(swrUrls).filter((url) =>
-          effectUrls.has(url),
-        );
-
-        const hooks = this.getHooks();
-        const inconsistentUrls = Array.from(this.paramMismatches.values())
-          .filter((mismatch) => {
-            return hooks.some(
-              (hook) =>
-                hook.routes.includes(route) &&
-                hook.lastUrl?.includes(mismatch.endpoint),
-            );
-          })
-          .map((mismatch) => mismatch.endpoint);
-
-        const swrCount = swrUrls.size;
-        const effectCount = effectUrls.size;
-        const total = swrCount + effectCount;
-
-        return {
-          route,
-          totalFetches: total,
-          swrFetches: swrCount,
-          effectFetches: effectCount,
-          unknownFetches: 0,
-          duplicateUrls,
-          inconsistentUrls,
-          coveragePct: total > 0 ? Math.round((swrCount / total) * 100) : 0,
-        };
-      })
-      .sort((a, b) => b.totalFetches - a.totalFetches);
+    return this.getTracker("routeCoverage").snapshot({
+      hooks: this.getHooks(),
+      paramMismatches: this.getTracker("paramMismatch").snapshot(),
+    });
   }
 
   getDiagnostics() {
     const hooks = this.getHooks();
-    const mismatches = this.getParamMismatches();
-    const coverage = this.getRouteCoverage();
+    const { paramMismatches, routeCoverage } = this.buildTrackerData(hooks);
+    return this.buildDiagnostics(hooks, paramMismatches, routeCoverage);
+  }
 
+  private getTracker<K extends TrackerName>(key: K): TrackerRegistry[K] {
+    return this.trackers[key];
+  }
+
+  private buildTrackerData(hooks: HookEntry[]): {
+    waterfall: WaterfallEntry[];
+    paramMismatches: ParamMismatch[];
+    routeCoverage: RouteCoverage[];
+  } {
+    const paramMismatches = this.getTracker("paramMismatch").snapshot();
     return {
-      slowKeys: hooks
-        .filter((hook) => hook.slowCount > 0)
-        .sort((a, b) => b.slowCount - a.slowCount),
-      stalledKeys: hooks.filter((hook) => hook.status === "stalled"),
-      highInstanceKeys: hooks.filter((hook) => hook.instances >= 4),
-      paramMismatches: mismatches,
-      badRequestKeys: hooks.filter((hook) => hook.badRequestCount > 0),
-      lowCoverageRoutes: coverage.filter(
-        (route) => route.coveragePct < 50 && route.totalFetches >= 2,
-      ),
-      duplicateFetchRoutes: coverage.filter(
-        (route) => route.duplicateUrls.length > 0,
-      ),
-      effectOnlyRoutes: coverage.filter(
-        (route) => route.swrFetches === 0 && route.effectFetches > 0,
-      ),
-      pollingKeys: hooks.filter((hook) => hook.refreshInterval !== null),
-      errorKeys: hooks
-        .filter((hook) => hook.errorCount > 0)
-        .sort((a, b) => b.errorCount - a.errorCount),
+      waterfall: this.getTracker("waterfall").snapshot(),
+      paramMismatches,
+      routeCoverage: this.getTracker("routeCoverage").snapshot({
+        hooks,
+        paramMismatches,
+      }),
     };
   }
 
-  private detectParamMismatch(
-    key: string,
-    snapshots: ParamSnapshot[],
-    route: string,
+  private buildDiagnostics(
+    hooks: HookEntry[],
+    mismatches: ParamMismatch[],
+    coverage: RouteCoverage[],
   ) {
-    if (snapshots.length < 2) return;
-
-    const paramKeySets = snapshots.map((snapshot) =>
-      Object.keys(snapshot.queryParams).sort().join(","),
-    );
-    const uniqueSets = new Set(paramKeySets);
-    if (uniqueSets.size <= 1) return;
-
-    const endpoint = snapshots[0].pathname;
-    const existing = this.paramMismatches.get(endpoint);
-    const exampleUrls = snapshots.map((snapshot) => snapshot.url).slice(0, 3);
-
-    this.paramMismatches.set(endpoint, {
-      id: existing?.id ?? createId(),
-      endpoint,
-      seenParamSets: Array.from(uniqueSets).map((set) =>
-        set.split(",").filter(Boolean),
-      ),
-      firstSeenAt: existing?.firstSeenAt ?? Date.now(),
-      lastSeenAt: Date.now(),
-      occurrences: (existing?.occurrences ?? 0) + 1,
-      exampleUrls,
-    });
-
-    this.pushEvent({
-      type: "param-mismatch",
-      key,
-      duration: null,
-      route,
-      concurrentWith: [],
-      httpStatus: null,
-      origin: "swr",
-      flagged: true,
-    });
-
-    this.emit("hooks:updated");
-  }
-
-  private checkDuplicateFetch(
-    pathname: string,
-    route: string,
-    origin: FetchOrigin,
-    key: string,
-  ) {
-    const swrUrls = this.swrUrlsByRoute.get(route) ?? new Set();
-    const effectUrls = this.effectUrlsByRoute.get(route) ?? new Set();
-
-    const isDuplicate =
-      origin === "swr" ? effectUrls.has(pathname) : swrUrls.has(pathname);
-
-    if (isDuplicate) {
-      this.pushEvent({
-        type: "duplicate-fetch",
-        key,
-        duration: null,
-        route,
-        concurrentWith: [],
-        httpStatus: null,
-        origin,
-        flagged: true,
-      });
-      this.emit("hooks:updated");
-    }
-  }
-
-  private parseParams(url: string, method: FetchMethod): ParamSnapshot {
-    const parsed = this.tryParseUrl(url);
-    const queryParams: Record<string, string> = {};
-
-    if (parsed) {
-      parsed.searchParams.forEach((value, key) => {
-        queryParams[key] = value;
-      });
-    }
-
-    return {
-      url,
-      pathname: parsed?.pathname ?? url,
-      queryParams,
-      bodyParams: null,
-      method,
-      capturedAt: Date.now(),
-    };
-  }
-
-  private tryParseUrl(url: string): URL | null {
-    try {
-      return new URL(url, "http://localhost");
-    } catch {
-      return null;
-    }
-  }
-
-  private addWaterfallEntry(
-    entry: Pick<
-      WaterfallEntry,
-      "key" | "route" | "origin" | "startedAt" | "concurrent"
-    >,
-  ) {
-    this.waterfall.unshift({
-      id: createId(),
-      completedAt: null,
-      duration: null,
-      status: "pending",
-      httpStatus: null,
-      ...entry,
-    });
-    if (this.waterfall.length > this.maxWaterfall) this.waterfall.pop();
-  }
-
-  private completeWaterfallEntry(
-    key: string,
-    duration: number,
-    status: WaterfallEntry["status"],
-    httpStatus: number | null,
-  ) {
-    const idx = this.waterfall.findIndex(
-      (entry) => entry.key === key && entry.status === "pending",
-    );
-    if (idx !== -1) {
-      this.waterfall[idx] = {
-        ...this.waterfall[idx],
-        completedAt: Date.now(),
-        duration,
-        status,
-        httpStatus,
-      };
-    }
+    return this.diagnosticsBuilder.build(hooks, mismatches, coverage);
   }
 
   private pushEvent(event: Omit<TimelineEvent, "id" | "timestamp">) {
@@ -719,14 +276,6 @@ export class HooksLensStore extends EventTarget {
     });
     if (this.timeline.length > this.maxTimeline) this.timeline.pop();
     this.dispatchEvent(new Event("timeline:updated"));
-  }
-
-  private clearStallTimer(key: string) {
-    const timer = this.stallTimers.get(key);
-    if (timer) {
-      clearTimeout(timer);
-      this.stallTimers.delete(key);
-    }
   }
 
   private emit(eventName: string) {

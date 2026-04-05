@@ -1,23 +1,34 @@
+import { DiagnosticsBuilder } from "./DiagnosticsBuilder";
+import { HookCatalog } from "./HookCatalog";
+import { RequestLifecycleCoordinator } from "./RequestLifecycleCoordinator";
 import { HooksLensStore } from "./core";
-import { setupBroadcastListener } from "./broadcast";
+import { setupBroadcastListener } from "./helper";
 
 export {
-  SLOW_FETCH_THRESHOLD_MS,
-  STALL_THRESHOLD_MS,
-  type CustomHookRegistration,
-  type FetchEvent,
-  type FetchMethod,
-  type FetchOrigin,
-  type HookEntry,
-  type HookStatus,
-  type ParamMismatch,
-  type ParamSnapshot,
-  type RouteCoverage,
-  type TimelineEvent,
-  type TimelineEventType,
-  type WaterfallEntry,
+  HooksLensStore,
+  DiagnosticsBuilder,
+  HookCatalog,
+  RequestLifecycleCoordinator,
+};
+
+export type {
+  CustomHookRegistration,
+  FetchEvent,
+  FetchMethod,
+  FetchOrigin,
+  HookEntry,
+  HookStatus,
+  ParamMismatch,
+  ParamSnapshot,
+  RouteCoverage,
+  TimelineEvent,
+  TimelineEventType,
+  WaterfallEntry,
 } from "./types";
 
+export { SLOW_FETCH_THRESHOLD_MS, STALL_THRESHOLD_MS } from "./types";
+
+// Initialise singleton store with broadcast support
 const globalForStore = globalThis as unknown as {
   hooksLensStore: HooksLensStore | undefined;
 };
@@ -30,5 +41,3 @@ if (process.env.NODE_ENV !== "production") {
 }
 
 setupBroadcastListener(hooksLensStore);
-
-export const insightStore = hooksLensStore;

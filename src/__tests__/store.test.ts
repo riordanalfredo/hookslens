@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import {
+  HooksLensStore,
   SLOW_FETCH_THRESHOLD_MS,
   STALL_THRESHOLD_MS,
   hooksLensStore,
@@ -144,5 +145,99 @@ describe("hooksLensStore", () => {
     );
     hooksLensStore.unregisterHook("key:stall", "/stall");
     vi.useRealTimers();
+  });
+
+  it("builds diagnostics buckets correctly", () => {
+    const store = new HooksLensStore();
+
+    // High instances + polling
+    store.registerHook("key:high", "query", 1000, "/diag");
+    store.registerHook("key:high", "query", 1000, "/diag/a");
+    store.registerHook("key:high", "query", 1000, "/diag/b");
+    store.registerHook("key:high", "query", 1000, "/diag/c");
+
+    // Slow hook
+    store.registerHook("key:slow", "query", undefined, "/diag");
+    store.recordFetchStart("key:slow", "/diag", "/api/diag/slow?id=1");
+    store.recordFetchSuccess("key:slow", SLOW_FETCH_THRESHOLD_MS, "/diag", 200);
+
+    // Error + bad request
+    store.registerHook("key:error", "mutation", undefined, "/diag");
+    store.recordMutationStart("key:error", "/diag", "/api/diag/error");
+    store.recordMutationError("key:error", 25, "/diag", 422);
+
+    // Param mismatch
+    store.registerHook("key:param", "query", undefined, "/diag");
+    store.recordFetchStart("key:param", "/diag", "/api/diag/items?a=1");
+    store.recordFetchStart("key:param", "/diag", "/api/diag/items?b=1");
+
+    // Duplicate fetch route (SWR + effect same pathname)
+    store.registerHook("key:dup", "query", undefined, "/dup");
+    store.recordFetchStart("key:dup", "/dup", "/api/dup/shared?id=1");
+    store.recordExternalFetchStart(
+      "/api/dup/shared?id=1",
+      "GET",
+      "/dup",
+      "ext-dup-1",
+    );
+    store.recordExternalFetchDone(
+      "ext-dup-1",
+      40,
+      200,
+      "/dup",
+      "/api/dup/shared?id=1",
+    );
+
+    // Effect-only + low coverage route (0% SWR coverage, total fetches >= 2)
+    store.recordExternalFetchStart(
+      "/api/effect/one",
+      "GET",
+      "/effect-only",
+      "ext-e1",
+    );
+    store.recordExternalFetchDone(
+      "ext-e1",
+      30,
+      200,
+      "/effect-only",
+      "/api/effect/one",
+    );
+    store.recordExternalFetchStart(
+      "/api/effect/two",
+      "GET",
+      "/effect-only",
+      "ext-e2",
+    );
+    store.recordExternalFetchDone(
+      "ext-e2",
+      35,
+      200,
+      "/effect-only",
+      "/api/effect/two",
+    );
+
+    const diagnostics = store.getDiagnostics();
+
+    expect(diagnostics.highInstanceKeys.some((h) => h.key === "key:high")).toBe(
+      true,
+    );
+    expect(diagnostics.pollingKeys.some((h) => h.key === "key:high")).toBe(
+      true,
+    );
+    expect(diagnostics.slowKeys.some((h) => h.key === "key:slow")).toBe(true);
+    expect(diagnostics.errorKeys.some((h) => h.key === "key:error")).toBe(true);
+    expect(diagnostics.badRequestKeys.some((h) => h.key === "key:error")).toBe(
+      true,
+    );
+    expect(diagnostics.paramMismatches.length).toBeGreaterThan(0);
+    expect(
+      diagnostics.duplicateFetchRoutes.some((r) => r.route === "/dup"),
+    ).toBe(true);
+    expect(
+      diagnostics.effectOnlyRoutes.some((r) => r.route === "/effect-only"),
+    ).toBe(true);
+    expect(
+      diagnostics.lowCoverageRoutes.some((r) => r.route === "/effect-only"),
+    ).toBe(true);
   });
 });

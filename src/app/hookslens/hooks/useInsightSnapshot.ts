@@ -7,13 +7,15 @@ import type { StoreSnapshot, ThemeMode } from "../types";
 const THEME_KEY = "hookslens_theme";
 
 function getStoreSnapshot(): StoreSnapshot {
+  const snapshot = hooksLensStore.snapshot();
+
   return {
-    hooks: hooksLensStore.getHooks(),
-    timeline: hooksLensStore.getTimeline(),
-    waterfall: hooksLensStore.getWaterfall(),
-    routeCoverage: hooksLensStore.getRouteCoverage(),
-    diagnostics: hooksLensStore.getDiagnostics(),
-    routes: hooksLensStore.getRoutes(),
+    hooks: snapshot.hooks,
+    timeline: snapshot.timeline,
+    waterfall: snapshot.waterfall,
+    routeCoverage: snapshot.routeCoverage,
+    diagnostics: snapshot.diagnostics,
+    routes: snapshot.routes,
     meta: { timestamp: Date.now() },
   };
 }
