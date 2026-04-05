@@ -1,31 +1,57 @@
-# hookslens
+<div align="center">
+
+# 🔍 HooksLens
+
+**Developer DevTools for SWR and fetch behavior in Next.js apps**
 
 [![GitHub Repo](https://img.shields.io/badge/repo-riordanalfredo%2Fhookslens-181717?logo=github)](https://github.com/riordanalfredo/hookslens)
+[![NPM Version](https://img.shields.io/npm/v/hookslens?logo=npm)](https://www.npmjs.com/package/hookslens)
 [![License](https://img.shields.io/github/license/riordanalfredo/hookslens)](./LICENSE)
+[![Demo](https://img.shields.io/badge/demo-live-success?logo=vercel)](https://riordanalfredo.github.io/hookslens/)
 
-Developer panel for SWR and fetch behaviour in Next.js apps.
+[Demo](https://riordanalfredo.github.io/hookslens/) • [Installation](#installation) • [Documentation](#quick-start) • [Contributing](CONTRIBUTING.md)
 
-Open `/hookslens` in development to inspect:
+</div>
 
-- active hook keys and instance counts
-- route-level filtering
-- polling hooks
-- in-flight hooks
-- timeline events (including flagged duplicates/mismatches)
-- connection status and diagnostics badges
+---
 
-## What You Actually Get Today
+<div align="center">
 
-The current panel UI:
+![HooksLens Dashboard Demo](./hookslens-demo.gif)
 
-- Topbar with theme toggle, live connection state, and diagnostic pills
-- Sidebar with stats grid and route navigation
-- Registry table for hook status, instances, polling interval, and last fetch timing
-- Timeline panel with flagged events and route filtering
+_Real-time monitoring of fetch operations and SWR hooks_
 
-Theme mode is persisted in `localStorage`.
+</div>
 
-## Current Architecture
+## ✨ Features
+
+HooksLens provides real-time insights into your SWR hooks and fetch operations. Open `/hookslens` in development to access:
+
+- 🎯 **Active Hook Monitoring** – Track hook keys and instance counts
+- 🛣️ **Route-Level Filtering** – Focus on specific routes in your app
+- ⏱️ **Polling Detection** – Identify hooks with polling intervals
+- 🚀 **In-Flight Tracking** – Monitor active requests
+- 📊 **Timeline Events** – Visualize fetch sequences with flagged duplicates/mismatches
+- 🔗 **Connection Status** – Real-time diagnostics and health badges
+
+---
+
+## 🎨 What's Inside
+
+The HooksLens dashboard/panel includes:
+
+| Component          | Description                                                   |
+| ------------------ | ------------------------------------------------------------- |
+| **Topbar**         | Theme toggle, live connection state, diagnostic indicators    |
+| **Sidebar**        | Statistics grid and route navigation                          |
+| **Registry Table** | Hook status, instance counts, polling intervals, fetch timing |
+| **Timeline Panel** | Event visualization with filtering and flagged patterns       |
+
+> **Note:** Theme preferences are automatically persisted in `localStorage`.
+
+---
+
+## 🏗️ Architecture
 
 ```text
 src/
@@ -49,7 +75,7 @@ src/
       useHooksLens.ts
 ```
 
-Short runtime architecture:
+### Runtime Flow
 
 ```mermaid
 flowchart LR
@@ -64,19 +90,25 @@ flowchart LR
   F <--> I[BroadcastChannel sync]
 ```
 
-## Demo
+---
 
-A standalone mock demo is included in [hookslens-demo.jsx](./demo/hookslens-demo.jsx).
+## 🚀 Demo
 
-Use it when you want to preview the panel UX quickly without wiring SWR middleware or Next.js routes yet.
+<div align="center">
 
-Notes:
+### **[View Live Demo →](https://riordanalfredo.github.io/hookslens/)**
 
-- It is static/mock data for UI exploration, not connected to your runtime fetch/store.
-- Current sample scenarios are healthcare compliance focused (mismatch, duplicate fetch, stalled polling).
-- You can open it in any React sandbox or local React app page/component to preview interactions.
+</div>
 
-Run it locally from this repo:
+A standalone mock demo is included in [hookslens-demo.jsx](./demo/hookslens-demo.jsx) for quick UI exploration.
+
+**Demo Features:**
+
+- Static mock data for UI preview (not connected to runtime)
+- Healthcare compliance scenarios (mismatch detection, duplicate fetches, stalled polling)
+- Works in any React sandbox or local React app
+
+**Run locally:**
 
 ```bash
 npm install
@@ -85,20 +117,26 @@ npm run demo
 
 Then open the printed local URL (default: `http://127.0.0.1:5173/` or `http://localhost:5173/`).
 
-## Install From npm package
+---
 
-Install in your Next.js app:
+## 📦 Installation
+
+Install HooksLens in your Next.js app:
 
 ```bash
 npm i hookslens --save-dev
 ```
 
-You get:
+**What's included:**
 
-- `hookslens` runtime hooks/instrumentation
-- `hookslens/panel` dashboard component for a tiny App Router wrapper page
+- `hookslens` – Runtime hooks and instrumentation
+- `hookslens/panel` – Dashboard component for Next.js App Router
 
-## 1) Use The Hook Utilities
+---
+
+## 🔧 Quick Start
+
+### Step 1: Configure SWR Provider
 
 In your SWR provider, wire middleware + fetch observer:
 
@@ -130,7 +168,7 @@ export const SWRProvider = ({ children }: SWRProviderProps) => {
 };
 ```
 
-Optional custom hook registration:
+**Optional:** Register custom hooks for enhanced tracking:
 
 ```ts
 import { useHooksLens } from "hookslens";
@@ -142,9 +180,9 @@ useHooksLens({
 });
 ```
 
-## 2) Add the /hookslens Dashboard Route Wrapper
+### Step 2: Add Dashboard Route
 
-Create a tiny route page in your app:
+Create the HooksLens panel route in your app:
 
 ```tsx
 // src/app/hookslens/page.tsx
@@ -163,15 +201,17 @@ Then open:
 http://localhost:3000/hookslens
 ```
 
-The panel and instrumentation are intended for development usage:
+> **💡 Best Practice:** HooksLens is designed for development use only:
+>
+> - Enable middleware conditionally in development
+> - Install fetch observer only in development
+> - Keep `/hookslens` routes restricted to development environments
 
-- conditionally enable middleware only in development
-- only install fetch observer in development
-- keep `hookslens` routes available in development environments
+---
 
-## Scripts
+## 🛠️ Development Scripts
 
-From repo root:
+**Available commands:**
 
 ```bash
 npm install
@@ -183,87 +223,118 @@ npm run test:watch
 npm run pack:check
 ```
 
-The local-lib panel page (`src/app/hookslens/page.jsx`) is auto-generated from
-the source panel (`src/app/hookslens/page.tsx`) directly inside
-`scripts/build-local-lib.mjs`, so there is no separate UI template file to maintain.
+> **Note:** The local-lib panel page is auto-generated from source files via `scripts/build-local-lib.mjs`.
 
-## Testing
+---
 
-Test files live under `src/__tests__/` in this repo:
+## 🧪 Testing
 
-- `src/__tests__/useHooksLens.test.ts`
-- `src/__tests__/fetchObserver.test.ts`
-- `src/__tests__/store.test.ts`
-- `src/__tests__/middleware.test.ts`
+**Test coverage includes:**
 
-Supported patterns in `package.json`:
+- `useHooksLens.test.ts` – Hook registration and lifecycle
+- `fetchObserver.test.ts` – Fetch interception logic
+- `store.test.ts` – State management
+- `middleware.test.ts` – SWR middleware integration
 
-- `src/**/__tests__/**/*.{test,spec}.{ts,tsx}`
-- `src/**/*.{test,spec}.{ts,tsx}`
+**Supported patterns:**
 
-Use these commands:
-
-```bash
-npm test         # run once (CI/publish-safe)
-npm run test:watch
-npm run test:ui
+```
+src/**/__tests__/**/*.{test,spec}.{ts,tsx}
+src/**/*.{test,spec}.{ts,tsx}
 ```
 
-## Related Tools and Research
+**Commands:**
 
-This project is inspired by existing React and network debugging ecosystems, while focusing specifically on SWR plus hook-flow visibility in Next.js apps.
+```bash
+npm test              # Run once (CI/publish-safe)
+npm run test:watch    # Watch mode
+npm run test:ui       # Interactive UI
+```
 
-Adjacent references:
+---
 
-- React DevTools (components and hooks inspection): https://react.dev/learn/react-developer-tools
-- SWR official docs (cache, revalidation, middleware model): https://swr.vercel.app/docs/getting-started
-- SWR middleware docs (extension point used by Hookslens): https://swr.vercel.app/docs/middleware
-- React `useEffect` reference and troubleshooting notes: https://react.dev/reference/react/useEffect
-- Chrome DevTools Network panel (request-level debugging): https://developer.chrome.com/docs/devtools/network
-- OpenTelemetry JS (observability patterns for instrumentation): https://opentelemetry.io/docs/languages/js/
+## 🔗 Related Tools & Research
 
-What differs in Hookslens:
+HooksLens builds upon the React and network debugging ecosystem with a focus on SWR + Next.js hook-flow visibility.
 
-- Browser/network tools show request outcomes, but not hook registration intent.
-- React DevTools shows component and hook snapshots, but not SWR-centric cross-hook fetch flow as a dedicated panel.
-- Hookslens is purpose-built for development diagnostics in Next.js + SWR projects, including hook key activity, timeline flags, and route-level debugging context.
+**Complementary tools:**
+| Tool | Focus | Link |
+|------|-------|------|
+| **React DevTools** | Component & hooks inspection | [docs](https://react.dev/learn/react-developer-tools) |
+| **SWR** | Cache & revalidation | [docs](https://swr.vercel.app/docs/getting-started) |
+| **SWR Middleware** | Extension point (used by HooksLens) | [docs](https://swr.vercel.app/docs/middleware) |
+| **Chrome DevTools** | Network request debugging | [docs](https://developer.chrome.com/docs/devtools/network) |
+| **OpenTelemetry JS** | Observability patterns | [docs](https://opentelemetry.io/docs/languages/js/) |
 
-## Known Limitations
+**What makes HooksLens unique:**
 
-- Development-only design: instrumentation is intended for local/staging diagnostics, not production telemetry.
-- Causality depth: current timeline shows sequence and overlap, but not full dependency-cause graphs for every effect.
-- Browser API dependency: cross-tab sync relies on BroadcastChannel and gracefully degrades when unavailable.
-- Client fetch focus: observer tracks browser fetch calls; server-side data access patterns are not fully represented in the panel.
-- Manual baseline today: missing hook detection is currently visual/observational unless you add project-specific assertions.
+- 🎯 Shows hook registration **intent**, not just request outcomes
+- 📊 Dedicated SWR-centric panel for cross-hook fetch flow analysis
+- 🛣️ Route-level debugging context for Next.js apps
+- ⏱️ Timeline visualization with duplicate/mismatch detection
 
-## When Not to Use Hookslens
+---
 
-- You need production-grade distributed tracing across backend services.
-- Your app is not Next.js and does not use SWR-driven client data flows.
-- You are profiling rendering performance only (React Profiler is a better first tool).
-- You need zero runtime instrumentation even in development environments.
-- Your debugging target is server actions, server components, or non-fetch transports only (for example GraphQL over custom clients without fetch).
+## ⚠️ Known Limitations
 
-## What's Next 🚀
+| Limitation                 | Description                                                                  |
+| -------------------------- | ---------------------------------------------------------------------------- |
+| **Development-only**       | Designed for local/staging diagnostics, not production telemetry             |
+| **Causality depth**        | Shows sequence and overlap, not full dependency-cause graphs                 |
+| **Browser API dependency** | Cross-tab sync uses BroadcastChannel (graceful degradation when unavailable) |
+| **Client-side focus**      | Tracks browser fetch calls; server-side patterns not fully represented       |
+| **Manual baseline**        | Missing hook detection is visual/observational without custom assertions     |
 
-The current roadmap is focused on closing the most important debugging gaps:
+### When NOT to Use HooksLens
 
-- [ ] Revalidation cause tracing: annotate events with trigger sources (focus, reconnect, interval, mutate, mount, key change) so revalidation no longer looks random.
+HooksLens may not be the right tool if you need:
 
-- [ ] Effect trigger context: capture lightweight cause hints for external fetches (for example, route transition, visibility change, user action tags) to better explain useEffect chains.
+- ❌ Production-grade distributed tracing across backend services
+- ❌ Support for non-Next.js apps without SWR
+- ❌ Rendering performance profiling (use React Profiler instead)
+- ❌ Zero runtime instrumentation in development
+- ❌ Debugging server actions, server components, or non-fetch transports (e.g., GraphQL over custom clients)
 
-- [ ] Expected hook baseline checks: allow devs to define expected hook presence per route and flag missing hooks after refactors.
+---
 
-- [ ] CI-safe regression summary: export diagnostics snapshots for PR checks so unexpected hook disappearance and duplicate patterns can be reviewed before merge.
+## 🗺️ Roadmap
 
-## Contributing
+Our focus is on closing critical debugging gaps:
 
-Contribution guide: [CONTRIBUTING.md](CONTRIBUTING.md)
+- [ ] **Revalidation Cause Tracing**
+      Annotate events with trigger sources (focus, reconnect, interval, mutate, mount, key change)
 
-## GenAI Disclosure
+- [ ] **Effect Trigger Context**
+      Capture lightweight cause hints for external fetches (route transitions, visibility changes, user actions)
+
+- [ ] **Expected Hook Baseline Checks**
+      Define expected hook presence per route and flag missing hooks after refactors
+
+- [ ] **CI-Safe Regression Summary**
+      Export diagnostics snapshots for PR checks to catch unexpected hook disappearance and duplicate patterns
+
+---
+
+## 🤝 Contributing
+
+We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) for details.
+
+---
+
+## 📄 License
+
+This project is licensed under the terms specified in the [LICENSE](LICENSE) file.
+
+---
+
+## 🤖 GenAI Disclosure
 
 Parts of this project were developed with assistance from generative AI tools, including Claude.
 
-## License
+---
 
-License text: [LICENSE](LICENSE)
+<div align="center">
+
+**[⬆ Back to Top](#-hookslens)**
+
+</div>
