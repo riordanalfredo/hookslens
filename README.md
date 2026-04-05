@@ -190,7 +190,7 @@ Create the HooksLens panel route in your app:
 // src/app/hookslens/page.tsx
 
 import HooksLensPanel from "hookslens/panel";
-// OR do this: import HooksLensPane from "dist/local-lib/src/app/hookslens/page"
+// OR do this: import HooksLensPanel from "dist/local-lib/src/app/hookslens/page"
 
 export default function Page() {
   return <HooksLensPanel />;

@@ -42,13 +42,6 @@ dist/                   — Built artifacts (not in git)
 3. Run `npm run build` to confirm no TypeScript errors
 4. Open a PR with a clear description of the problem you're solving
 
-## Priorities for v0.2
-
-- `useHooksLens` tracking in the middleware
-- Slow fetch detection via `onLoadingSlow` config
-- Key search and filter in the panel
-- SSE endpoint for live push updates to the panel (replacing polling)
-
 ## Code style
 
 - TypeScript strict mode
