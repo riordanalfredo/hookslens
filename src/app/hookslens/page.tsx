@@ -98,6 +98,34 @@ const HooksLensPane = () => {
     [timeline, routeFilter],
   );
 
+  const filteredWaterfall = useMemo(
+    () =>
+      routeFilter === "all"
+        ? snapshot?.waterfall ?? []
+        : (snapshot?.waterfall ?? []).filter(
+            (entry) => entry.route === routeFilter,
+          ),
+    [snapshot?.waterfall, routeFilter],
+  );
+
+  const filteredRouteCoverage = useMemo(
+    () =>
+      routeFilter === "all"
+        ? snapshot?.routeCoverage ?? []
+        : (snapshot?.routeCoverage ?? []).filter(
+            (coverage) => coverage.route === routeFilter,
+          ),
+    [snapshot?.routeCoverage, routeFilter],
+  );
+
+  const filteredPollingHooks = useMemo(
+    () =>
+      routeFilter === "all"
+        ? hooks
+        : hooks.filter((hook) => hook.routes.includes(routeFilter)),
+    [hooks, routeFilter],
+  );
+
   useEffect(() => {
     if (!snapshot?.routes.length) return;
 
@@ -111,6 +139,18 @@ const HooksLensPane = () => {
       didInitRouteRef.current = true;
     }
   }, [snapshot?.routes, routeFilter]);
+
+  // Reset route filter to "all" when switching away from Current Page view
+  const prevViewRef = useRef<ViewMode>(activeView);
+  useEffect(() => {
+    const viewChanged = prevViewRef.current !== activeView;
+    prevViewRef.current = activeView;
+
+    // Only reset filter when switching FROM "current" view TO another view
+    if (viewChanged && activeView !== "current" && routeFilter !== "all") {
+      setRouteFilter("all");
+    }
+  }, [activeView, routeFilter]);
 
   if (!snapshot) {
     return (
@@ -155,13 +195,6 @@ const HooksLensPane = () => {
           connected={connected}
           theme={theme}
           onToggleTheme={toggleTheme}
-          search={search}
-          onSearchChange={setSearch}
-          paused={paused}
-          onTogglePause={() => setPaused((p) => !p)}
-          onClearLog={clearTimeline}
-          routeFilter={routeFilter}
-          onRouteFilterChange={setRouteFilter}
         />
 
         <Sidebar
@@ -171,7 +204,10 @@ const HooksLensPane = () => {
           activeView={activeView}
           onSelectView={setActiveView}
           routeFilter={routeFilter}
-          onSelectRoute={setRouteFilter}
+          onSelectRouteAndSwitchView={(route) => {
+            setRouteFilter(route);
+            setActiveView("current");
+          }}
           stats={stats}
           eventCount={timeline.length}
           lastUpdate={formatTime(snapshot.meta.timestamp)}
@@ -288,16 +324,18 @@ const HooksLensPane = () => {
 
             {activeView === "coverage" && (
               <CoverageView
-                routeCoverage={snapshot.routeCoverage}
+                routeCoverage={filteredRouteCoverage}
                 diagnostics={snapshot.diagnostics}
               />
             )}
 
             {activeView === "waterfall" && (
-              <WaterfallView entries={snapshot.waterfall} />
+              <WaterfallView entries={filteredWaterfall} />
             )}
 
-            {activeView === "polling" && <PollingView hooks={hooks} />}
+            {activeView === "polling" && (
+              <PollingView hooks={filteredPollingHooks} />
+            )}
           </div>
 
           <TimelinePanel
@@ -306,6 +344,11 @@ const HooksLensPane = () => {
             fetchingCount={stats.fetchingCount}
             expanded={eventsExpanded}
             onToggleExpanded={() => setEventsExpanded((current) => !current)}
+            searchTerm={search}
+            onSearchChange={setSearch}
+            paused={paused}
+            onTogglePause={() => setPaused((p) => !p)}
+            onClearLog={clearTimeline}
           />
         </div>
       </div>
