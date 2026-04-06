@@ -35,7 +35,7 @@ export const Topbar = ({
         </div>
 
         <button className="theme-btn" onClick={onToggleTheme}>
-          {theme === "dark" ? "Light mode" : "Dark mode"}
+          {theme === "dark" ? "☀️ Light mode" : "🌙 Dark mode"}
         </button>
 
         <span className={`pill ${connected ? "green" : ""}`}>

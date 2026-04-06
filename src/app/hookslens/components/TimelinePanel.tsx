@@ -35,7 +35,7 @@ export const TimelinePanel = ({
         </div>
 
         <button className="btn" onClick={onToggleExpanded}>
-          {expanded ? "shrink" : "expand events"}
+          {expanded ? "shrink" : "expand"}
         </button>
       </div>
 
