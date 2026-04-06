@@ -1,6 +1,6 @@
 {
   "name": "hookslens",
-  "version": "0.3.13",
+  "version": "0.3.14",
   "description": "Real-time fetch monitoring for Next.js apps with timeline visualization and duplicate detection. Optionally tracks SWR hook intent to catch parameter mismatches.",
   "keywords": [
     "nextjs",
