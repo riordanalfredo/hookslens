@@ -8,6 +8,11 @@ interface TimelinePanelProps {
   fetchingCount: number;
   expanded: boolean;
   onToggleExpanded: () => void;
+  searchTerm?: string;
+  onSearchChange?: (value: string) => void;
+  paused?: boolean;
+  onTogglePause?: () => void;
+  onClearLog?: () => void;
 }
 
 export const TimelinePanel = ({
@@ -16,7 +21,22 @@ export const TimelinePanel = ({
   fetchingCount,
   expanded,
   onToggleExpanded,
+  searchTerm = "",
+  onSearchChange,
+  paused = false,
+  onTogglePause,
+  onClearLog,
 }: TimelinePanelProps) => {
+  // Filter entries by search term
+  const filteredEntries = entries.filter((entry) => {
+    if (!searchTerm) return true;
+    const search = searchTerm.toLowerCase();
+    return (
+      entry.key.toLowerCase().includes(search) ||
+      entry.route.toLowerCase().includes(search) ||
+      entry.type.toLowerCase().includes(search)
+    );
+  });
   return (
     <div className={`timeline-panel ${expanded ? "expanded" : ""}`}>
       <div className="panel-header">
@@ -30,17 +50,39 @@ export const TimelinePanel = ({
         </div>
 
         <div style={{ fontSize: 12, color: "var(--text3)" }}>
-          {entries.length} events
+          {filteredEntries.length} events
           {routeFilter !== "all" ? ` | ${routeFilter}` : ""}
+          {searchTerm ? ` | filtered` : ""}
         </div>
 
-        <button className="btn" onClick={onToggleExpanded}>
-          {expanded ? "shrink" : "expand"}
-        </button>
+        <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+          {onSearchChange && (
+            <input
+              className="search-input"
+              placeholder="filter events…"
+              value={searchTerm}
+              onChange={(e) => onSearchChange(e.target.value)}
+              style={{ width: 180 }}
+            />
+          )}
+          {onTogglePause && (
+            <button className="btn" onClick={onTogglePause}>
+              {paused ? "▶ resume" : "⏸ pause"}
+            </button>
+          )}
+          {onClearLog && (
+            <button className="btn" onClick={onClearLog}>
+              clear
+            </button>
+          )}
+          <button className="btn" onClick={onToggleExpanded}>
+            {expanded ? "⬇ shrink" : "⬆ expand"}
+          </button>
+        </div>
       </div>
 
       <div className="timeline-scroll">
-        {entries.map((entry) => (
+        {filteredEntries.map((entry) => (
           <div
             key={entry.id}
             className={`timeline-entry ${entry.flagged ? "flagged" : ""}`}
@@ -55,7 +97,11 @@ export const TimelinePanel = ({
           </div>
         ))}
 
-        {entries.length === 0 && <div className="empty">No events yet</div>}
+        {filteredEntries.length === 0 && (
+          <div className="empty">
+            {searchTerm ? "No matching events" : "No events yet"}
+          </div>
+        )}
       </div>
     </div>
   );

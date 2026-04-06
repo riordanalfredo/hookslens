@@ -9,7 +9,7 @@ interface SidebarProps {
   activeView: ViewMode;
   onSelectView: (view: ViewMode) => void;
   routeFilter: string;
-  onSelectRoute: (route: string) => void;
+  onSelectRouteAndSwitchView: (route: string) => void;
   stats: PanelStats;
   eventCount: number;
   lastUpdate: string;
@@ -34,7 +34,7 @@ export const Sidebar = ({
   activeView,
   onSelectView,
   routeFilter,
-  onSelectRoute,
+  onSelectRouteAndSwitchView,
   stats,
   eventCount,
   lastUpdate,
@@ -119,7 +119,7 @@ export const Sidebar = ({
         <div>
           <div
             className={`route-item ${activeView === "current" && routeFilter === "all" ? "active" : ""}`}
-            onClick={() => onSelectRoute("all")}
+            onClick={() => onSelectRouteAndSwitchView("all")}
           >
             <span>all routes</span>
             <span className="route-count">{hooks.length}</span>
@@ -144,7 +144,7 @@ export const Sidebar = ({
               <div
                 key={route}
                 className={`route-item ${isActive ? "active" : ""}`}
-                onClick={() => onSelectRoute(route)}
+                onClick={() => onSelectRouteAndSwitchView(route)}
               >
                 <span className="route-main">
                   <span className="route-text">{route}</span>

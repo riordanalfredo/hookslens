@@ -28,8 +28,8 @@ export const AllHooksView = ({
             <th style={{ width: "8%" }}>Status</th>
             <th style={{ width: "8%" }}>HTTP</th>
             <th style={{ width: "8%" }}>4xx</th>
-            <th style={{ width: "8%" }}>⊛</th>
-            <th style={{ width: "8%" }}>⧉</th>
+            <th style={{ width: "8%" }}>⊛ mismatch</th>
+            <th style={{ width: "8%" }}>⧉ duplicate</th>
             <th style={{ width: "14%" }}>Dur</th>
           </tr>
         </thead>
