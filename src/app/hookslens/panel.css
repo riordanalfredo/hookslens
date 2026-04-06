@@ -37,14 +37,20 @@ body {
   --yellow: #ca8a04;
   --red: #dc2626;
   --orange: #ea580c;
+  --purple: #b8860b;
+  --cyan: #0891b2;
   --green-bg: #f0fdf4;
   --yellow-bg: #fefce8;
   --red-bg: #fef2f2;
   --orange-bg: #fff7ed;
+  --purple-bg: #fff8dc;
+  --cyan-bg: #ecfeff;
   --green-border: rgba(22, 163, 74, 0.18);
   --yellow-border: rgba(202, 138, 4, 0.18);
   --red-border: rgba(220, 38, 38, 0.18);
   --orange-border: rgba(234, 88, 12, 0.18);
+  --purple-border: rgba(184, 134, 11, 0.18);
+  --cyan-border: rgba(8, 145, 178, 0.18);
   --accent-bg: #e7e5e4;
   --accent-border: rgba(37, 99, 235, 0.18);
   --shadow: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
@@ -66,14 +72,20 @@ body {
   --yellow: #eab308;
   --red: #ef4444;
   --orange: #f97316;
+  --purple: #c9a050;
+  --cyan: #06b6d4;
   --green-bg: rgba(34, 197, 94, 0.1);
   --yellow-bg: rgba(234, 179, 8, 0.1);
   --red-bg: rgba(239, 68, 68, 0.1);
   --orange-bg: rgba(249, 115, 22, 0.1);
+  --purple-bg: rgba(201, 160, 80, 0.1);
+  --cyan-bg: rgba(6, 182, 212, 0.1);
   --green-border: rgba(34, 197, 94, 0.25);
   --yellow-border: rgba(234, 179, 8, 0.25);
   --red-border: rgba(239, 68, 68, 0.25);
   --orange-border: rgba(249, 115, 22, 0.25);
+  --purple-border: rgba(201, 160, 80, 0.25);
+  --cyan-border: rgba(6, 182, 212, 0.25);
   --accent-bg: rgba(240, 180, 41, 0.1);
   --accent-border: rgba(240, 180, 41, 0.25);
   --shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
@@ -306,7 +318,7 @@ body {
 }
 
 .hookslens-root .route-count {
-  font-size: 11px;
+  font-size: 13px;
   color: var(--text3);
 }
 
@@ -430,7 +442,7 @@ body {
 }
 
 .hookslens-root .main-subtitle {
-  font-size: 11px;
+  font-size: 13px;
   color: var(--text3);
   margin-top: 3px;
   display: flex;
@@ -482,7 +494,7 @@ body {
 }
 
 .hookslens-root .route-chip {
-  font-size: 11px;
+  font-size: 13px;
   padding: 2px 8px;
   border-radius: 4px;
   cursor: pointer;
@@ -515,6 +527,24 @@ body {
   display: flex;
   flex-direction: column;
   gap: 14px;
+}
+
+.hookslens-root .hooks-section {
+  margin-bottom: 18px;
+}
+
+.hookslens-root .hooks-section-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text2);
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--border);
 }
 
 .hookslens-root .feature-intro,
@@ -603,7 +633,7 @@ body {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 8px;
-  padding: 11px 15px;
+  padding: 13px 15px;
   box-shadow: var(--shadow);
   border-left-width: 3px;
 }
@@ -649,6 +679,67 @@ body {
   align-items: center;
   gap: 6px;
   flex-wrap: wrap;
+}
+
+/* BADGES */
+.hookslens-root .badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 11px;
+  padding: 2px 7px;
+  border-radius: 9px;
+  font-weight: 500;
+  border: 1px solid;
+  white-space: nowrap;
+}
+
+.hookslens-root .badge-swr {
+  background: var(--accent-bg);
+  border-color: var(--accent-border);
+  color: var(--accent);
+}
+
+.hookslens-root .badge-mutation {
+  background: rgba(6, 182, 212, 0.1);
+  border-color: rgba(6, 182, 212, 0.2);
+  color: #06b6d4;
+}
+
+.hookslens-root .badge-fresh {
+  background: var(--green-bg);
+  border-color: var(--green-border);
+  color: var(--green);
+}
+
+.hookslens-root .badge-http-ok {
+  background: var(--green-bg);
+  border-color: var(--green-border);
+  color: var(--green);
+}
+
+.hookslens-root .badge-http-bad {
+  background: var(--red-bg);
+  border-color: var(--red-border);
+  color: var(--red);
+}
+
+.hookslens-root .badge-http-warn {
+  background: var(--yellow-bg);
+  border-color: var(--yellow-border);
+  color: var(--yellow);
+}
+
+.hookslens-root .badge-error {
+  background: var(--red-bg);
+  border-color: var(--red-border);
+  color: var(--red);
+}
+
+.hookslens-root .badge-polling {
+  background: var(--yellow-bg);
+  border-color: var(--yellow-border);
+  color: var(--yellow);
 }
 
 .hookslens-root .hook-card-body {
@@ -859,7 +950,7 @@ body {
   gap: 8px;
   padding: 6px 14px;
   border-bottom: 1px solid var(--border);
-  font-size: 11px;
+  font-size: 13px;
   font-family: "JetBrains Mono", monospace;
 }
 
@@ -1066,7 +1157,7 @@ body {
 .hookslens-root table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 11px;
+  font-size: 13px;
 }
 
 .hookslens-root th {
@@ -1159,7 +1250,7 @@ body {
 .hookslens-root table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 11px;
+  font-size: 13px;
 }
 
 .hookslens-root thead {
@@ -1357,7 +1448,7 @@ body {
   gap: 9px;
   padding: 6px 20px;
   border-bottom: 1px solid var(--border);
-  font-size: 11px;
+  font-size: 13px;
   font-family: "JetBrains Mono", monospace;
 }
 
