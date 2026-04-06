@@ -65,10 +65,10 @@
   "scripts": {
     "clean": "rm -rf dist",
     "dev": "next dev",
-    "dev:lib": "tsup src/index.ts --watch --format cjs,esm --dts",
+    "dev:lib": "tsup src/index.ts --watch --format cjs,esm --dts --tsconfig tsconfig.build.json",
     "dev:panel": "vite --config src/panel-dev/vite.config.mjs",
     "demo": "vite --config demo/vite.config.mjs",
-    "build": "npm run clean && tsup src/index.ts --format cjs,esm --dts",
+    "build": "npm run clean && tsup src/index.ts --format cjs,esm --dts --tsconfig tsconfig.build.json",
     "build:demo": "vite build --config demo/vite.config.mjs",
     "build:local-lib": "node ./scripts/build-local-lib.mjs",
     "typecheck": "tsc -p tsconfig.json --noEmit",
