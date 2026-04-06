@@ -32,17 +32,6 @@ export const CurrentPageView = ({
 
   return (
     <div className="feature-stack">
-      <div className="feature-intro">
-        <div className="feature-title">
-          {routeFilter === "all" ? "Current Page" : routeFilter}
-        </div>
-        <div className="feature-subtitle">
-          {hooks.length} hooks on this page · {swrHooks.length} query ·{" "}
-          {mutationHooks.length} mutation
-          {slowHooks.length > 0 ? ` · ${slowHooks.length} slow` : ""}
-        </div>
-      </div>
-
       {swrHooks.length > 0 && (
         <section className="hooks-section">
           <div className="hooks-section-title">
